@@ -6,8 +6,8 @@ The playbook for "wiring FeedbackPort into a specific product." Written for you 
 
 Every product you integrate needs a row in the `products` table before it has a `slug` to use. Two ways to do that:
 
-1. **Admin console** (once Phase 0 is done): log into the console → New Product → fill in slug (e.g. `cardwhisper`, lowercase letters/digits/hyphens only), name, brand_color
-2. **Manual workaround** (before the admin console exists): insert a row directly via the Supabase Studio Table Editor, or run:
+1. **Admin console** (the normal way): log into `/admin` → New Product → fill in slug (e.g. `cardwhisper`, lowercase letters/digits/hyphens only), name, brand_color
+2. **Manual fallback**: insert a row directly via the Supabase Studio Table Editor, or run:
 
 ```sql
 insert into products (slug, name, brand_color)
@@ -143,8 +143,8 @@ This prompt assumes the AI assistant can read `docs/INTEGRATION.md` (paste it in
 
 每个要接入的产品都要在 `products` 表里有一行，才有 `slug` 可用。两种方式：
 
-1. **管理后台**（Phase 0 完成后）：登录后台 → 新增产品 → 填 slug（比如 `cardwhisper`，只能小写字母数字连字符）、name、brand_color
-2. **临时手动方式**（管理后台还没搭好之前）：直接在 Supabase Studio 的 Table Editor 里插一行，或者跑：
+1. **管理后台**（正常方式）：登录 `/admin` → 新增产品 → 填 slug（比如 `cardwhisper`，只能小写字母数字连字符）、name、brand_color
+2. **手动兜底方式**：直接在 Supabase Studio 的 Table Editor 里插一行，或者跑：
 
 ```sql
 insert into products (slug, name, brand_color)

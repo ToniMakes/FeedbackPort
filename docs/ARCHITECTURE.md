@@ -34,7 +34,7 @@ flowchart LR
 | **admin** (admin console) | Status changes, writing replies, the cross-product unified inbox view | Never sends email directly (see the event-driven design below) | Depends on `core`, requires login |
 | **API Routes** | Request validation (including anti-abuse), tenant resolution, database reads/writes | Not responsible for sending email or computing duplicates (dedup is a separate, later-phase module) | Depends on `core`, depends on the Supabase client |
 | **notify-submitter** (Edge Function) | Listens for DB events, assembles and sends notification emails | Never called directly by business code — only reacts to a DB webhook | Depends on `core`, depends on Resend |
-| **tenant-resolver** (middleware) | Resolves a request's subdomain/slug into a `product_id` | Does no authorization (that's RLS's and the API layer's job) | Shared by board/widget/admin |
+| **tenant-resolver** (middleware) | Resolves a request's subdomain into a tenant *slug* (a string) and injects it as `x-tenant-slug` | Does no database lookup and no authorization — resolving the slug to an actual `product_id` happens per-request in the API layer (`lib/tenant.ts`), not here, and isn't cached yet (see below) | Shared by board/widget/admin |
 
 **The key decoupling point**: when an admin writes a reply in the console, that's just an insert into the `replies` table. The side effect of "email the user" is triggered by a database change event firing an Edge Function — the business code itself has no idea "sending an email" is even a thing. Benefits:
 
@@ -43,22 +43,26 @@ flowchart LR
 
 ## Multi-tenant routing design
 
-Borrows Fider's approach: one codebase, subdomain mapped to `product_id`.
+Borrows Fider's approach: one codebase, subdomain mapped to `product_id`. Split across two layers rather than resolved once — middleware only ever produces a *slug* (a string, no I/O); turning that slug into an actual `product_id` is the API layer's job, on every request:
 
 ```mermaid
 sequenceDiagram
     participant Browser
     participant Middleware as Next.js Middleware
+    participant API as API Route
     participant DB as products table
 
-    Browser->>Middleware: Request cardwhisper.feedback.domain.com
-    Middleware->>Middleware: Extract subdomain "cardwhisper"
-    Middleware->>DB: Look up product_id by slug (cached)
-    DB-->>Middleware: product_id + branding config
-    Middleware->>Browser: Inject tenant context, continue rendering board/widget
+    Browser->>Middleware: Request cardwhisper.board.domain.com
+    Middleware->>Middleware: Extract subdomain "cardwhisper" (string only, no DB call)
+    Middleware->>Browser: Inject x-tenant-slug header, render the board page
+    Browser->>API: GET /api/feedback (same-origin, carries x-tenant-slug)
+    API->>DB: Look up product_id by slug
+    DB-->>API: product_id + branding config
 ```
 
 Local dev and test environments fall back to the `DEFAULT_TENANT_SLUG` env var instead of relying on a real subdomain.
+
+**Known gap**: that `product_id` lookup isn't cached — every request re-queries `products`. Fine at current volume; worth revisiting once there's real traffic to justify the added complexity (see `lib/tenant.ts`).
 
 ## Cross-product unified inbox
 
@@ -91,6 +95,7 @@ The admin console's default view is "all products" — it aggregates feedback ac
 
 - **RLS (Row Level Security)**: `feedback`/`votes`/`replies` expose only `select` and a restricted `insert` to the anonymous role (it cannot change `status` or insert a reply with `is_admin=true`). Status changes and admin replies can only go through the service-role key (held only by server-side API Routes). The permission boundary lives at the data layer, not just behind a hidden button in the UI.
 - **Three-layer anti-abuse**: honeypot field (catches naive scripts) → Turnstile (catches automated tools) → IP rate limiting (catches high-frequency requests that get past the first two). The three layers are independent middleware functions — any one of them can be disabled or swapped out without affecting the other two.
+- **`notify-submitter` shared-secret auth**: this Edge Function has Supabase's own JWT verification turned off (the newer `sb_secret_`/`sb_publishable_` key format isn't a legacy-secret-signed JWT, so that check doesn't work here — see the deployment note in API.md), so it checks its own `x-webhook-secret` header against a `WEBHOOK_SECRET` env var instead. Without this, the function's public URL would accept a forged payload from anyone who found it, turning the Resend account into an open relay.
 
 ---
 
@@ -130,7 +135,7 @@ flowchart LR
 | **admin**（管理后台） | 改状态、写回复、跨产品统一收件箱视图 | 不直接处理邮件发送（见下方事件驱动设计） | 依赖 `core`，需要登录态 |
 | **API Routes** | 请求校验（含防刷）、租户解析、数据库读写 | 不负责邮件发送、不负责判重计算（判重是后续阶段独立模块） | 依赖 `core`，依赖 Supabase client |
 | **notify-submitter**（Edge Function） | 监听 DB 事件，组装并发送通知邮件 | 不被业务代码直接调用，只响应 DB Webhook | 依赖 `core`，依赖 Resend |
-| **tenant-resolver**（中间件） | 将请求的子域名/slug 解析为 `product_id` | 不做权限校验（权限是 RLS 和 API 层各自的职责） | 被 board/widget/admin 共用 |
+| **tenant-resolver**（中间件） | 将请求的子域名解析为租户 *slug*（字符串），注入 `x-tenant-slug` | 不查库、不做权限校验——把 slug 解析成真正的 `product_id` 是 API 层（`lib/tenant.ts`）每次请求都要做的事，不在这里，也还没做缓存（见下文） | 被 board/widget/admin 共用 |
 
 **关键解耦点**：管理员在后台写回复，只是往 `replies` 表插入一行数据；"发一封邮件通知用户"这个副作用，是数据库变更事件触发 Edge Function 去做的，业务代码本身完全不知道"发邮件"这件事的存在。好处：
 
@@ -139,22 +144,26 @@ flowchart LR
 
 ## 多租户路由设计
 
-参考 Fider 的思路：一套代码，通过子域名映射到 `product_id`。
+参考 Fider 的思路：一套代码，通过子域名映射到 `product_id`。这一步拆成两层，不是一次性解析完——中间件只产出一个 *slug*（字符串，不做任何 I/O）；把这个 slug 变成真正的 `product_id` 是 API 层每次请求都要做的事：
 
 ```mermaid
 sequenceDiagram
     participant 浏览器
     participant Middleware as Next.js Middleware
+    participant API as API Route
     participant DB as products 表
 
-    浏览器->>Middleware: 请求 cardwhisper.feedback.域名.com
-    Middleware->>Middleware: 提取子域名 "cardwhisper"
-    Middleware->>DB: 按 slug 查 product_id（带缓存）
-    DB-->>Middleware: product_id + 品牌配置
-    Middleware->>浏览器: 注入 tenant 上下文，继续渲染 board/widget
+    浏览器->>Middleware: 请求 cardwhisper.board.域名.com
+    Middleware->>Middleware: 提取子域名 "cardwhisper"（只是字符串处理，不查库）
+    Middleware->>浏览器: 注入 x-tenant-slug 请求头，渲染 board 页面
+    浏览器->>API: GET /api/feedback（同源请求，带着 x-tenant-slug）
+    API->>DB: 按 slug 查 product_id
+    DB-->>API: product_id + 品牌配置
 ```
 
 本地开发和测试环境通过环境变量 `DEFAULT_TENANT_SLUG` 兜底，不依赖真实子域名。
+
+**已知的缺口**：这个 `product_id` 查询没有做缓存，每次请求都会重新查一次 `products` 表。现在这个体量下没问题，等真有流量数据支撑"值不值得为这个加复杂度"的时候再考虑（见 `lib/tenant.ts`）。
 
 ## 跨产品统一收件箱
 
@@ -187,3 +196,4 @@ sequenceDiagram
 
 - **RLS（Row Level Security）**：`feedback`/`votes`/`replies` 对匿名角色只开放 `select` 和受限的 `insert`（不能改 `status`、不能插入 `is_admin=true` 的回复），改状态和写管理员回复只能通过 service-role 密钥（仅服务端 API Route 持有）执行。权限边界下沉到数据层，而不是只靠前端隐藏按钮。
 - **防刷三层**：蜜罐字段（拦截无脑脚本）→ Turnstile（拦截自动化工具）→ IP 频率限制（拦截绕过前两者的高频请求），三层是独立的中间件函数，任意一层都可以单独禁用/替换而不影响另外两层。
+- **`notify-submitter` 的共享密钥校验**：这个 Edge Function 关掉了 Supabase 自己的 JWT 校验（新版 `sb_secret_`/`sb_publishable_` 这套密钥不是 legacy secret 签发的 JWT，这个校验在这里本来就通不过，见 API.md 的部署说明），改成自己校验请求头里的 `x-webhook-secret` 是否跟 `WEBHOOK_SECRET` 这个环境变量一致。没有这一步，这个函数的公开 URL 会接受任何人伪造的请求体，把 Resend 账号变成一个垃圾邮件转发器。
