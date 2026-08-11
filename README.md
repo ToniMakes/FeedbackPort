@@ -12,6 +12,23 @@ Unlike Canny / Fider / Astuto / Quackback — which are built around "one organi
 
 Tech choices and the decision process live in [docs/decisions](docs/decisions); why not just use Canny/Fider/Astuto/Quackback is covered in [0001](docs/decisions/0001-self-build-vs-saas-vs-oss.md).
 
+## Integrate your product
+
+Add one line before `</body>` — works on any tech stack, no build step required:
+
+```html
+<script
+  src="https://cdn.your-domain.com/widget.js"
+  data-product="your-product-slug"
+  data-turnstile-site-key="1x00000000000000000000AA"
+  async
+></script>
+```
+
+No web page at all (a desktop/mobile app)? Every registered product also gets a public voting board for free at `https://<slug>.board.your-domain.com` — just link to it from a "Feedback" menu item or settings screen.
+
+Full guide — React/Next.js and Vue snippets, WordPress, pre-filling the logged-in user's email, a troubleshooting checklist, and a ready-to-copy AI-assistant prompt: **[docs/INTEGRATION.md](docs/INTEGRATION.md)**
+
 ## Docs index
 
 | Doc | Contents |
@@ -69,6 +86,23 @@ MIT
 - MIT 协议，欢迎自部署、fork、提 PR
 
 技术选型和决策过程见 [docs/decisions](docs/decisions)，为什么不直接用现成的 Canny/Fider/Astuto/Quackback 见 [0001](docs/decisions/0001-self-build-vs-saas-vs-oss.md)。
+
+## 接入你的产品
+
+在 `</body>` 前加一行——任意技术栈都能用，不需要额外构建步骤：
+
+```html
+<script
+  src="https://cdn.你的域名.com/widget.js"
+  data-product="你的产品slug"
+  data-turnstile-site-key="1x00000000000000000000AA"
+  async
+></script>
+```
+
+产品完全没有网页（比如桌面/移动端 App）？每个注册过的产品都自带一个免费的公开投票面板，地址是 `https://<slug>.board.你的域名.com`——直接在 App 的"意见反馈"菜单项或设置页里链过去就行。
+
+完整接入指南——React/Next.js 和 Vue 代码片段、WordPress、已登录用户邮箱预填、排查清单、可直接复制的 AI 辅助接入提示词：**[docs/INTEGRATION.md](docs/INTEGRATION.md)**
 
 ## 文档索引
 
