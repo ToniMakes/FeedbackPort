@@ -65,7 +65,7 @@ pnpm dev   # start apps/web
 
 ## Current status
 
-Phase 0 is live and verified end-to-end against a real deployment (`feedback.tonimakes.com`: Vercel + Supabase + Upstash + Cloudflare Turnstile + Resend). Submitting feedback, voting, admin magic-link login, admin replies, and the reply notification email have all been confirmed working with a real test product. What's left: integrating a second real product. See the Phase 0 checklist in [docs/ROADMAP.md](docs/ROADMAP.md) for the full picture.
+Phase 0 is live and verified end-to-end against a real deployment (`feedback.tonimakes.com`: Vercel + Supabase + Upstash + Cloudflare Turnstile + Resend), with two real products integrated: a web product (full loop including admin replies and the notification email, all confirmed) and `aiqd`, an Electron desktop app with no web presence of its own, linked to its public board from its Settings screen instead of the embed widget. See the Phase 0 checklist in [docs/ROADMAP.md](docs/ROADMAP.md) for the full picture.
 
 ## License
 
@@ -140,7 +140,7 @@ pnpm dev   # 启动 apps/web
 
 ## 当前状态
 
-Phase 0 已经真实上线并端到端验证过了（`feedback.tonimakes.com`：Vercel + Supabase + Upstash + Cloudflare Turnstile + Resend）。提交反馈、投票、管理员 magic link 登录、管理员回复、回复通知邮件，都拿一个真实测试产品在这套真实部署上确认跑通了。剩下的：再接入第二个真实产品。完整进度见 [docs/ROADMAP.md](docs/ROADMAP.md) 的 Phase 0 checklist。
+Phase 0 已经真实上线并端到端验证过了（`feedback.tonimakes.com`：Vercel + Supabase + Upstash + Cloudflare Turnstile + Resend），目前接入了两个真实产品：一个网页产品（完整链路，含管理员回复和通知邮件都确认跑通了），以及 `aiqd`——一个没有自己网页形态的 Electron 桌面应用，它在 Settings 页链到公开面板，而不是用嵌入组件。完整进度见 [docs/ROADMAP.md](docs/ROADMAP.md) 的 Phase 0 checklist。
 
 ## License
 
