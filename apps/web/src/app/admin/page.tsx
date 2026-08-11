@@ -1,160 +1,96 @@
 "use client";
 
-import { FEEDBACK_STATUSES } from "@feedbackport/core";
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { StatusBadge } from "@/components/status-badge";
-import { statusLabel } from "@/lib/status";
 
-interface FeedbackItem {
+interface ProductStat {
   id: string;
-  title: string;
-  body: string | null;
-  status: string;
-  submitter_email: string;
-  created_at: string;
+  slug: string;
+  name: string;
+  brandColor: string | null;
+  totalCount: number;
+  openCount: number;
+  latestFeedback: { title: string; createdAt: string } | null;
 }
 
 /**
- * 跨产品统一收件箱，见 docs/ARCHITECTURE.md「跨产品统一收件箱」。
- * productFilter 留空 = 默认视图，聚合所有产品的反馈。
+ * 管理后台首页：产品优先导航——先看产品列表，点进去才是具体反馈。
+ * 跨产品统一收件箱（docs/ARCHITECTURE.md 的核心差异化设计）没有丢，
+ * 挪到了 /admin/all，用页面右上角的链接进去，"一眼看完"改成靠每张
+ * 产品卡片上的待处理数体现，而不是默认摊开一个大列表。
  */
-export default function AdminInboxPage() {
-  const [items, setItems] = useState<FeedbackItem[]>([]);
+export default function AdminProductsPage() {
+  const [items, setItems] = useState<ProductStat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [productFilter, setProductFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-
-  async function load() {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (productFilter) params.set("product", productFilter);
-    if (statusFilter) params.set("status", statusFilter);
-
-    const res = await fetch(`/api/admin/feedback?${params.toString()}`);
-    const data = await res.json();
-    setItems(res.ok ? (data.items ?? []) : []);
-    setLoading(false);
-  }
 
   useEffect(() => {
-    void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productFilter, statusFilter]);
-
-  async function updateStatus(id: string, status: string) {
-    await fetch(`/api/admin/feedback/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    void load();
-  }
-
-  async function submitReply(id: string, body: string) {
-    if (!body.trim()) return;
-    await fetch(`/api/admin/feedback/${id}/reply`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
-    });
-    void load();
-  }
+    fetch("/api/admin/products")
+      .then((res) => res.json())
+      .then((data) => setItems(data.items ?? []))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <main className="shell-wide">
-      <h1>跨产品收件箱</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">默认聚合所有产品的反馈，无需逐个登录切换。</p>
-
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <input
-          placeholder="按 product slug 筛选（留空 = 全部产品）"
-          value={productFilter}
-          onChange={(event) => setProductFilter(event.target.value)}
-          className="input sm:max-w-xs"
-        />
-        <select
-          value={statusFilter}
-          onChange={(event) => setStatusFilter(event.target.value)}
-          className="select sm:w-auto"
-        >
-          <option value="">全部状态</option>
-          {FEEDBACK_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {statusLabel(status)}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1>产品</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">选一个产品查看它的反馈。</p>
+        </div>
+        <Link href="/admin/all" className="link shrink-0 text-sm">
+          跨产品全部反馈 →
+        </Link>
       </div>
 
       {loading ? (
         <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
       ) : items.length === 0 ? (
-        <p className="card mt-6 text-center text-sm text-slate-500 dark:text-slate-400">没有匹配的反馈。</p>
+        <div className="card mt-6 text-center">
+          <p className="text-sm text-slate-500 dark:text-slate-400">还没有产品。</p>
+          <Link href="/admin/products/new" className="btn-primary mt-4 inline-flex">
+            + 新增产品
+          </Link>
+        </div>
       ) : (
-        <ul className="mt-6 flex flex-col gap-3">
-          {items.map((item) => (
-            <FeedbackRow key={item.id} item={item} onStatusChange={updateStatus} onReply={submitReply} />
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {items.map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
-        </ul>
+        </div>
       )}
     </main>
   );
 }
 
-function FeedbackRow({
-  item,
-  onStatusChange,
-  onReply,
-}: {
-  item: FeedbackItem;
-  onStatusChange: (id: string, status: string) => void;
-  onReply: (id: string, body: string) => void;
-}) {
-  const [replyBody, setReplyBody] = useState("");
-
+function ProductCard({ product }: { product: ProductStat }) {
   return (
-    <li className="card">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.submitter_email}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <StatusBadge status={item.status} />
-          <select
-            value={item.status}
-            onChange={(event) => onStatusChange(item.id, event.target.value)}
-            className="select w-auto py-1.5 text-xs"
-          >
-            {FEEDBACK_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {statusLabel(status)}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {item.body && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{item.body}</p>}
-
-      <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
-        <textarea
-          value={replyBody}
-          onChange={(event) => setReplyBody(event.target.value)}
-          placeholder="写回复…"
-          className="textarea min-h-16 flex-1"
+    <Link
+      href={`/admin/products/${product.slug}`}
+      className="card block transition hover:border-indigo-300 hover:shadow-md dark:hover:border-indigo-800"
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className="h-2.5 w-2.5 shrink-0 rounded-full"
+          style={{ background: product.brandColor ?? "#94a3b8" }}
         />
-        <button
-          type="button"
-          onClick={() => {
-            onReply(item.id, replyBody);
-            setReplyBody("");
-          }}
-          className="btn-primary self-end"
-        >
-          回复
-        </button>
+        <p className="font-medium text-slate-900 dark:text-slate-100">{product.name}</p>
       </div>
-    </li>
+      <p className="mt-0.5 text-xs text-slate-400">{product.slug}</p>
+
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        {product.openCount > 0 && (
+          <span className="badge bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300">
+            {product.openCount} 条待处理
+          </span>
+        )}
+        <span className="text-xs text-slate-400">共 {product.totalCount} 条反馈</span>
+      </div>
+
+      {product.latestFeedback && (
+        <p className="mt-3 truncate border-t border-slate-100 pt-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
+          最新：{product.latestFeedback.title}
+        </p>
+      )}
+    </Link>
   );
 }
