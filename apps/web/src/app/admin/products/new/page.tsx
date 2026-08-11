@@ -34,22 +34,55 @@ export default function NewProductPage() {
   }
 
   return (
-    <main>
+    <main className="shell max-w-lg">
       <h1>新增产品</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          required
-          placeholder="slug（如 cardwhisper，只能小写字母数字连字符）"
-          value={slug}
-          onChange={(event) => setSlug(event.target.value)}
-        />
-        <input required placeholder="产品名称" value={name} onChange={(event) => setName(event.target.value)} />
-        <input type="color" value={brandColor} onChange={(event) => setBrandColor(event.target.value)} />
-        <button type="submit" disabled={submitting}>
-          创建
+      <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-4">
+        <div>
+          <label className="field-label" htmlFor="product-slug">
+            Slug
+          </label>
+          <input
+            id="product-slug"
+            required
+            placeholder="如 cardwhisper，只能小写字母数字连字符"
+            value={slug}
+            onChange={(event) => setSlug(event.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="field-label" htmlFor="product-name">
+            产品名称
+          </label>
+          <input
+            id="product-name"
+            required
+            placeholder="产品名称"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="field-label" htmlFor="product-color">
+            品牌色
+          </label>
+          <div className="flex items-center gap-3">
+            <input
+              id="product-color"
+              type="color"
+              value={brandColor}
+              onChange={(event) => setBrandColor(event.target.value)}
+              className="h-10 w-14 cursor-pointer rounded-lg border border-slate-300 bg-white p-1 dark:border-slate-700 dark:bg-slate-950"
+            />
+            <span className="text-sm text-slate-500 dark:text-slate-400">{brandColor}</span>
+          </div>
+        </div>
+        {error && <p className="alert-error">{error}</p>}
+        <button type="submit" disabled={submitting} className="btn-primary self-start">
+          {submitting ? "创建中…" : "创建"}
         </button>
       </form>
-      {error && <p>{error}</p>}
     </main>
   );
 }

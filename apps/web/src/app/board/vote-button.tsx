@@ -51,29 +51,37 @@ export function VoteButton({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)}>
-        投票
+      <button type="button" onClick={() => setOpen(true)} className="btn-secondary">
+        ▲ 投票
       </button>
     );
   }
 
   return (
-    <span>
+    <div className="card w-56 flex flex-col gap-2 p-3 shadow-md">
       <input
         type="email"
         required
         placeholder="你的邮箱（用于去重，不公开展示）"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
+        className="input"
       />
       <div ref={turnstileContainerRef} />
-      <button type="button" disabled={status === "verifying" || !email} onClick={() => void handleVote()}>
-        确认投票
-      </button>
-      <button type="button" onClick={() => setOpen(false)}>
-        取消
-      </button>
-      {status === "error" && <p>投票失败，请重试</p>}
-    </span>
+      {status === "error" && <p className="alert-error">投票失败，请重试</p>}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          disabled={status === "verifying" || !email}
+          onClick={() => void handleVote()}
+          className="btn-primary flex-1"
+        >
+          {status === "verifying" ? "验证中…" : "确认投票"}
+        </button>
+        <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
+          取消
+        </button>
+      </div>
+    </div>
   );
 }

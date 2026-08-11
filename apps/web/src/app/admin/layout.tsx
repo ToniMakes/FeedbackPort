@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
+import { AdminNav } from "./admin-nav";
 
 /** 保护 /admin/** 下所有路由，未登录一律跳 /login，见 src/app/login/page.tsx 顶部的注释 */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
@@ -13,5 +14,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/login");
   }
 
-  return <>{children}</>;
+  return (
+    <div className="min-h-screen">
+      <AdminNav />
+      {children}
+    </div>
+  );
 }

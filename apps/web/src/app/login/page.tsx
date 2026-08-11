@@ -30,25 +30,46 @@ export default function LoginPage() {
   }
 
   if (status === "sent") {
-    return <p>登录链接已经发到 {email}，去邮箱里点一下。</p>;
+    return (
+      <main className="flex min-h-screen items-center justify-center">
+        <div className="shell max-w-sm text-center">
+          <div className="card">
+            <p className="text-slate-700 dark:text-slate-300">
+              登录链接已经发到 <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>，去邮箱里点一下。
+            </p>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (
-    <main>
-      <h1>管理后台登录</h1>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          required
-          placeholder="you@example.com"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-        <button type="submit" disabled={status === "sending"}>
-          发送登录链接
-        </button>
-      </form>
-      {status === "error" && <p>发送失败——确认这个邮箱已经在 Supabase 项目里建好管理员账号。</p>}
+    <main className="flex min-h-screen items-center justify-center">
+      <div className="shell max-w-sm">
+        <h1 className="text-center">管理后台登录</h1>
+        <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-3">
+          <div>
+            <label className="field-label" htmlFor="login-email">
+              邮箱
+            </label>
+            <input
+              id="login-email"
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className="input"
+            />
+          </div>
+          {status === "error" && (
+            <p className="alert-error">发送失败——确认这个邮箱已经在 Supabase 项目里建好管理员账号。</p>
+          )}
+          <button type="submit" disabled={status === "sending"} className="btn-primary">
+            {status === "sending" ? "发送中…" : "发送登录链接"}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

@@ -4,6 +4,8 @@ import { FEEDBACK_STATUSES } from "@feedbackport/core";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { getTurnstileToken } from "@/lib/turnstile-client";
+import { StatusBadge } from "@/components/status-badge";
+import { statusLabel } from "@/lib/status";
 import { VoteButton } from "./vote-button";
 
 interface FeedbackListItem {
@@ -37,32 +39,57 @@ export function BoardList({ productSlug }: { productSlug: string }) {
   }, [statusFilter]);
 
   return (
-    <main>
-      <h1>反馈面板</h1>
+    <main className="shell">
+      <header className="mb-6">
+        <h1>反馈面板</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">有想法？告诉我们，投票支持你关心的功能。</p>
+      </header>
 
       <SubmitForm productSlug={productSlug} onSubmitted={load} />
 
-      <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-        <option value="">全部状态</option>
-        {FEEDBACK_STATUSES.map((status) => (
-          <option key={status} value={status}>
-            {status}
-          </option>
-        ))}
-      </select>
+      <div className="mt-8 mb-3 flex items-center justify-between">
+        <h2 className="text-base">全部反馈</h2>
+        <select
+          className="select w-auto"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+        >
+          <option value="">全部状态</option>
+          {FEEDBACK_STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {statusLabel(status)}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {loading ? (
-        <p>Loading…</p>
+        <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
       ) : items.length === 0 ? (
-        <p>还没有反馈，来提第一条吧。</p>
+        <p className="card py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+          还没有反馈，来提第一条吧。
+        </p>
       ) : (
-        <ul>
+        <ul className="flex flex-col gap-3">
           {items.map((item) => (
-            <li key={item.id}>
-              <Link href={`/board/${item.id}`}>{item.title}</Link>
-              {" — "}
-              {item.votes?.[0]?.count ?? 0} 票 · {item.status}
-              <VoteButton productSlug={productSlug} feedbackId={item.id} onVoted={load} />
+            <li key={item.id} className="card flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <Link href={`/board/${item.id}`} className="font-medium text-slate-900 hover:text-indigo-600 dark:text-slate-100 dark:hover:text-indigo-400">
+                  {item.title}
+                </Link>
+                {item.body && (
+                  <p className="mt-1 line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{item.body}</p>
+                )}
+                <div className="mt-2">
+                  <StatusBadge status={item.status} />
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-2">
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  {item.votes?.[0]?.count ?? 0} 票
+                </span>
+                <VoteButton productSlug={productSlug} feedbackId={item.id} onVoted={load} />
+              </div>
             </li>
           ))}
         </ul>
@@ -119,7 +146,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="card flex flex-col gap-3">
       <h2>有想法？说给我们听</h2>
       <input
         required
@@ -127,12 +154,14 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
         placeholder="一句话描述你的想法"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
+        className="input"
       />
       <textarea
         maxLength={2000}
         placeholder="更多细节（选填）"
         value={body}
         onChange={(event) => setBody(event.target.value)}
+        className="textarea"
       />
       <input
         required
@@ -140,12 +169,13 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
         placeholder="你的邮箱"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
+        className="input"
       />
       <div ref={turnstileContainerRef} />
-      <button type="submit" disabled={submitting}>
-        提交
+      {error && <p className="alert-error">{error}</p>}
+      <button type="submit" disabled={submitting} className="btn-primary self-start">
+        {submitting ? "提交中…" : "提交"}
       </button>
-      {error && <p>{error}</p>}
     </form>
   );
 }

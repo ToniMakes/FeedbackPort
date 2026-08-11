@@ -12,7 +12,9 @@ export default async function BoardPage() {
   const productSlug = headerList.get("x-tenant-slug");
 
   if (!productSlug) {
-    return <p>未能识别产品——检查访问域名的子域名，或本地开发时的 DEFAULT_TENANT_SLUG 配置。</p>;
+    return (
+      <p className="shell alert-error">未能识别产品——检查访问域名的子域名，或本地开发时的 DEFAULT_TENANT_SLUG 配置。</p>
+    );
   }
 
   return <BoardList productSlug={productSlug} />;

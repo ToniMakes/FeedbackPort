@@ -1,8 +1,9 @@
 "use client";
 
 import { FEEDBACK_STATUSES } from "@feedbackport/core";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { StatusBadge } from "@/components/status-badge";
+import { statusLabel } from "@/lib/status";
 
 interface FeedbackItem {
   id: string;
@@ -60,34 +61,37 @@ export default function AdminInboxPage() {
   }
 
   return (
-    <main>
+    <main className="shell-wide">
       <h1>跨产品收件箱</h1>
-      <p>
-        <Link href="/admin/products/new">+ 新增产品</Link>
-      </p>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">默认聚合所有产品的反馈，无需逐个登录切换。</p>
 
-      <div>
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <input
           placeholder="按 product slug 筛选（留空 = 全部产品）"
           value={productFilter}
           onChange={(event) => setProductFilter(event.target.value)}
+          className="input sm:max-w-xs"
         />
-        <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="select sm:w-auto"
+        >
           <option value="">全部状态</option>
           {FEEDBACK_STATUSES.map((status) => (
             <option key={status} value={status}>
-              {status}
+              {statusLabel(status)}
             </option>
           ))}
         </select>
       </div>
 
       {loading ? (
-        <p>Loading…</p>
+        <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
       ) : items.length === 0 ? (
-        <p>没有匹配的反馈。</p>
+        <p className="card mt-6 text-center text-sm text-slate-500 dark:text-slate-400">没有匹配的反馈。</p>
       ) : (
-        <ul>
+        <ul className="mt-6 flex flex-col gap-3">
           {items.map((item) => (
             <FeedbackRow key={item.id} item={item} onStatusChange={updateStatus} onReply={submitReply} />
           ))}
@@ -109,21 +113,36 @@ function FeedbackRow({
   const [replyBody, setReplyBody] = useState("");
 
   return (
-    <li>
-      <strong>{item.title}</strong> — {item.submitter_email}
-      {item.body && <p>{item.body}</p>}
-      <select value={item.status} onChange={(event) => onStatusChange(item.id, event.target.value)}>
-        {FEEDBACK_STATUSES.map((status) => (
-          <option key={status} value={status}>
-            {status}
-          </option>
-        ))}
-      </select>
-      <div>
+    <li className="card">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
+          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.submitter_email}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <StatusBadge status={item.status} />
+          <select
+            value={item.status}
+            onChange={(event) => onStatusChange(item.id, event.target.value)}
+            className="select w-auto py-1.5 text-xs"
+          >
+            {FEEDBACK_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {statusLabel(status)}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {item.body && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{item.body}</p>}
+
+      <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
         <textarea
           value={replyBody}
           onChange={(event) => setReplyBody(event.target.value)}
           placeholder="写回复…"
+          className="textarea min-h-16 flex-1"
         />
         <button
           type="button"
@@ -131,6 +150,7 @@ function FeedbackRow({
             onReply(item.id, replyBody);
             setReplyBody("");
           }}
+          className="btn-primary self-end"
         >
           回复
         </button>
