@@ -27,3 +27,13 @@ supabase/.temp
 *.log
 .turbo/
 coverage/
+
+# Terraform local state, plans, provider cache, backend config, and private inputs
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+terraform.tfvars.json
+backend.hcl
+crash.log

@@ -40,6 +40,9 @@ Full guide — React/Next.js and Vue snippets, WordPress, pre-filling the logged
 | [docs/API.md](docs/API.md) | Public endpoints, admin endpoints, widget init params, notification event contract |
 | [docs/INTEGRATION.md](docs/INTEGRATION.md) | Playbook for wiring FeedbackPort into a specific product (framework snippets + troubleshooting + an AI-assistant prompt template) |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | MVP scope, open-source release prep, later phases |
+| [infra/terraform/README.md](infra/terraform/README.md) | AWS staging infrastructure, account setup, Terraform lifecycle, and cost controls |
+| [docs/decisions/0004](docs/decisions/0004-aws-staging-infrastructure.md) | Terraform AWS staging architecture decision |
+| [docs/decisions/0005](docs/decisions/0005-aws-cli-session-auth.md) | Temporary AWS CLI session authentication for local Terraform |
 
 ## Project structure
 
@@ -115,6 +118,9 @@ MIT
 | [docs/API.md](docs/API.md) | 公开端点、管理端点、Widget 接入参数、通知事件契约 |
 | [docs/INTEGRATION.md](docs/INTEGRATION.md) | 把 FeedbackPort 接进具体产品的操作手册（各框架代码片段 + 排查清单 + AI 辅助接入提示词） |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | MVP 范围、开源发布准备、后续阶段规划 |
+| [infra/terraform/README.md](infra/terraform/README.md) | AWS staging 基础设施、账号初始化、Terraform 生命周期与成本控制 |
+| [docs/decisions/0004](docs/decisions/0004-aws-staging-infrastructure.md) | Terraform AWS staging 架构决策 |
+| [docs/decisions/0005](docs/decisions/0005-aws-cli-session-auth.md) | 本地 Terraform 使用 AWS CLI 临时会话认证 |
 
 ## 项目结构
 
