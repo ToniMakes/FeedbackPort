@@ -40,6 +40,25 @@ After the bucket exists, initialize each remote-backed stack with its backend fi
 
 Apply `staging-base` only after reviewing its plan. The apply creates the certificate and validation records but does not wait for certificate issuance, so it can finish and print the zone name servers. Add those NS records in Namecheap, wait for DNS delegation and for ACM status `ISSUED`, then add the secret values outside Terraform. Copy the base outputs into `staging-runtime/terraform.tfvars.example` (as `terraform.tfvars`), review the runtime plan and apply. This creates a zero-task service by default; phase C will deploy a real immutable image and scale the service to one task for verification.
 
+### Build and publish the image without GitHub OIDC
+
+The current AWS Free Plan policy blocks the GitHub OIDC provider, so image publishing is owner-operated from the workstation. Create the ignored file `apps/web/.env.staging.local` with only the three public build settings below, using the **staging** Supabase project and Turnstile widget. These values are embedded in browser code; never place server-side credentials in this file.
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://your-staging-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-staging-anon-key
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-staging-site-key
+```
+
+After `aws login --region ap-southeast-2`, run the publisher from the repository root with a unique immutable tag:
+
+```powershell
+$tag = "staging-$(Get-Date -Format yyyyMMddHHmmss)"
+.\infra\Publish-StagingImage.ps1 -ImageTag $tag
+```
+
+The script reads only those three `NEXT_PUBLIC_*` values, builds the Docker image, and pushes it to the staging ECR repository using a temporary ECR login token. It does not set runtime secrets or change ECS desired count. Once the four staging secrets have been added to Secrets Manager, set `container_image` to the pushed ECR image URI and `desired_count = 1` in the ignored `staging-runtime/terraform.tfvars`; review a fresh plan before applying.
+
 To retire an idle environment, run `terraform destroy` in `staging-runtime` first. Keep `staging-base` and the state bucket. Delete permanent resources only when intentionally decommissioning staging, after backing up and reviewing state. ECR has immutable tags and retains the newest 20 images.
 
 ### Cost model (planning estimate, not a bill)
@@ -87,6 +106,25 @@ bucket 建好后，各远端状态栈使用对应 backend 文件初始化（把 
 当前 AWS Free Plan 项目的组织策略已明确拒绝 `iam:CreateOpenIDConnectProvider`。保持 `enable_github_deployment = false`（默认值）；不要创建静态 GitHub 凭证或启用高级功能。在观察到的策略下，GitHub Actions 暂不能访问 AWS。
 
 先审阅 `staging-base` plan 再 apply。apply 会创建证书与验证记录，但不会等待证书签发，因此能先结束并输出托管区 Name Server。将 NS 记录加入 Namecheap，等待 DNS 委托和 ACM 状态变为 `ISSUED`，再在 Terraform 外填入密钥。随后把 base 输出填入 `staging-runtime/terraform.tfvars.example`（另存为 `terraform.tfvars`），审阅 runtime plan 后 apply。默认服务任务数为 0；阶段 C 会部署真实不可变镜像，并将服务扩到一个任务进行验证。
+
+### 不使用 GitHub OIDC 推送镜像
+
+当前 AWS Free Plan 策略阻止创建 GitHub OIDC provider，因此由所有者在本机推送镜像。在被忽略的 `apps/web/.env.staging.local` 中只填写以下三个公开构建值，并使用 **staging** Supabase 项目和 Turnstile widget 的配置。这些值会被编入浏览器代码；不要把服务端密钥放进此文件。
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://your-staging-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-staging-anon-key
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-staging-site-key
+```
+
+运行 `aws login --region ap-southeast-2` 后，在仓库根目录执行以下命令，使用唯一且不可变的镜像标签：
+
+```powershell
+$tag = "staging-$(Get-Date -Format yyyyMMddHHmmss)"
+.\infra\Publish-StagingImage.ps1 -ImageTag $tag
+```
+
+脚本仅读取这三个 `NEXT_PUBLIC_*` 值，构建 Docker 镜像，并使用临时 ECR 登录令牌推送到 staging 仓库。它不会设置运行时密钥或修改 ECS desired count。待四个 staging 密钥都写入 Secrets Manager 后，再在被忽略的 `staging-runtime/terraform.tfvars` 中设置 `container_image` 为刚推送的 ECR 镜像 URI，并将 `desired_count` 设为 1；审阅新的 plan 后再 apply。
 
 环境闲置时先在 `staging-runtime` 执行 `terraform destroy`。保留 `staging-base` 与状态 bucket。只有明确停用 staging 时才销毁常驻资源，并先备份、审阅状态。ECR 标签不可变并保留最新 20 个镜像。
 
