@@ -34,12 +34,14 @@ export default function NewProductPage() {
   }
 
   return (
-    <main className="shell max-w-lg">
-      <h1>新增产品</h1>
+    <main className="shell page-enter max-w-lg">
+      <p className="eyebrow mb-2">Workspace</p>
+      <h1 className="text-3xl">新增产品</h1>
+      <p className="mt-2 text-sm text-slate-500">为一个产品创建独立的反馈入口。</p>
       <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-4">
         <div>
           <label className="field-label" htmlFor="product-slug">
-            Slug
+            产品标识（Slug）
           </label>
           <input
             id="product-slug"
@@ -49,6 +51,7 @@ export default function NewProductPage() {
             onChange={(event) => setSlug(event.target.value)}
             className="input"
           />
+          <p className="mt-1.5 text-xs text-slate-500">用于公开反馈面板地址，只能使用小写字母、数字和连字符。</p>
         </div>
         <div>
           <label className="field-label" htmlFor="product-name">

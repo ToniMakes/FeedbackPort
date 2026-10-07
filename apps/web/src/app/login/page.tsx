@@ -33,8 +33,8 @@ export default function LoginPage() {
     return (
       <main className="flex min-h-screen items-center justify-center">
         <div className="shell max-w-sm text-center">
-          <div className="card">
-            <p className="text-slate-700 dark:text-slate-300">
+          <div className="card page-enter">
+            <p className="text-sm leading-6 text-slate-700">
               登录链接已经发到 <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>，去邮箱里点一下。
             </p>
           </div>
@@ -46,8 +46,10 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center">
       <div className="shell max-w-sm">
-        <h1 className="text-center">管理后台登录</h1>
-        <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-3">
+        <p className="eyebrow mb-3 text-center">FeedbackPort</p>
+        <h1 className="text-center">登录管理后台</h1>
+        <p className="mt-2 text-center text-sm text-slate-500">使用管理员邮箱接收一次性登录链接。</p>
+        <form onSubmit={handleSubmit} className="card page-enter mt-6 flex flex-col gap-4">
           <div>
             <label className="field-label" htmlFor="login-email">
               邮箱

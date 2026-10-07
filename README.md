@@ -103,6 +103,7 @@ The web app runs locally at http://localhost:3000. Data-backed features require 
 | [Data model](docs/DATA_MODEL.md) | Database schema and Row Level Security policies |
 | [API reference](docs/API.md) | Public and admin endpoints, widget configuration, notification events |
 | [Roadmap](docs/ROADMAP.md) | Current scope and planned work |
+| [Frontend changes](docs/FRONTEND_REDESIGN_PLAN.md) | Summary of the frontend updates |
 | [Architecture decisions](docs/decisions) | Product and technology choices |
 | [AWS staging guide](infra/terraform/README.md) | Terraform stacks, account setup, cost considerations, and deployment lifecycle |
 
@@ -217,6 +218,7 @@ Web 应用默认运行在 http://localhost:3000。数据功能需要按 apps/web
 | [数据模型](docs/DATA_MODEL.md) | 数据库结构与 Row Level Security 策略 |
 | [API 参考](docs/API.md) | 公开和管理端点、widget 配置、通知事件 |
 | [迭代路线图](docs/ROADMAP.md) | 当前范围与后续计划 |
+| [前端改造记录](docs/FRONTEND_REDESIGN_PLAN.md) | 前端界面与动效改动摘要 |
 | [架构决策](docs/decisions) | 产品与技术方案记录 |
 | [AWS staging 文档](infra/terraform/README.md) | Terraform 资源层次、账号设置、成本与部署生命周期 |
 

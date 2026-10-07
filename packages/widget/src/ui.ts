@@ -38,23 +38,23 @@ export function mountWidget(
         position: fixed; right: 20px; bottom: 20px; z-index: 2147483647;
         display: inline-flex; align-items: center; gap: 6px;
         padding: 11px 18px; border-radius: 999px; border: none; cursor: pointer;
-        background: #4f46e5; color: white; font: 600 14px inherit;
-        box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
-        transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        background: #5946d2; color: white; font: 600 14px inherit;
+        box-shadow: 0 2px 8px rgba(32, 33, 38, 0.16);
+        transition: transform 150ms cubic-bezier(0.2, 0.75, 0.25, 1), box-shadow 150ms ease, background 150ms ease;
       }
-      .fh-button:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(79, 70, 229, 0.4); }
+      .fh-button:hover { background: #4937bb; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(32, 33, 38, 0.2); }
       .fh-button:active { transform: translateY(0); }
 
       .fh-panel {
         position: fixed; right: 20px; bottom: 76px; z-index: 2147483647;
         width: 300px; max-width: calc(100vw - 40px);
-        border-radius: 16px; background: white; color: #0f172a;
-        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18), 0 2px 8px rgba(15, 23, 42, 0.08);
-        border: 1px solid #e2e8f0;
+        border-radius: 12px; background: white; color: #202126;
+        box-shadow: 0 10px 28px rgba(32, 33, 38, 0.14);
+        border: 1px solid #e8e8e6;
         font: 14px inherit;
         display: none;
-        opacity: 0; transform: translateY(6px) scale(0.98);
-        transition: opacity 0.15s ease, transform 0.15s ease;
+        opacity: 0; transform: translateY(5px) scale(0.99);
+        transition: opacity 210ms cubic-bezier(0.2, 0.75, 0.25, 1), transform 210ms cubic-bezier(0.2, 0.75, 0.25, 1);
       }
       .fh-panel.open { display: block; }
       .fh-panel.open.fh-visible { opacity: 1; transform: translateY(0) scale(1); }
@@ -102,6 +102,10 @@ export function mountWidget(
       .fh-hp {
         position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        .fh-button, .fh-panel, .fh-panel button[type="submit"] { transition: none !important; }
+      }
     </style>
     <button class="fh-button" type="button">💬 反馈</button>
     <form class="fh-panel">
@@ -127,8 +131,10 @@ export function mountWidget(
   const submitButton = shadow.querySelector<HTMLButtonElement>("button[type=submit]")!;
   const errorEl = shadow.querySelector<HTMLParagraphElement>(".fh-error")!;
   const turnstileContainer = shadow.querySelector<HTMLDivElement>(".fh-turnstile")!;
+  let closeTimer: number | undefined;
 
   function openPanel() {
+    window.clearTimeout(closeTimer);
     panel.classList.add("open");
     // 先 display:block 再下一帧加 fh-visible，让 opacity/transform 过渡能触发
     requestAnimationFrame(() => panel.classList.add("fh-visible"));
@@ -136,7 +142,12 @@ export function mountWidget(
 
   function closePanel() {
     panel.classList.remove("fh-visible");
-    panel.classList.remove("open");
+    window.clearTimeout(closeTimer);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      panel.classList.remove("open");
+      return;
+    }
+    closeTimer = window.setTimeout(() => panel.classList.remove("open"), 220);
   }
 
   button.addEventListener("click", () => {

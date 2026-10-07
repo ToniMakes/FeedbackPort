@@ -58,10 +58,11 @@ export function VoteButton({
   }
 
   return (
-    <div className="card w-56 flex flex-col gap-2 p-3 shadow-md">
+    <div className="card vote-panel w-64 flex flex-col gap-2 p-3 sm:w-72">
       <input
         type="email"
         required
+        aria-label="你的邮箱（用于去重，不公开展示）"
         placeholder="你的邮箱（用于去重，不公开展示）"
         value={email}
         onChange={(event) => setEmail(event.target.value)}

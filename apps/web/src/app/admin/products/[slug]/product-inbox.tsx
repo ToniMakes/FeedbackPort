@@ -24,17 +24,17 @@ export function ProductInbox({ slug }: { slug: string }) {
   }, [slug]);
 
   return (
-    <main className="shell-wide">
+    <main className="shell-wide page-enter">
       <Link href="/admin" className="link text-sm">
         ← 返回产品列表
       </Link>
 
-      <div className="mt-4 flex items-center gap-2">
+      <div className="mt-5 flex items-center gap-3">
         <span
-          className="h-3 w-3 shrink-0 rounded-full"
+          className="h-3 w-3 shrink-0 rounded-full ring-4 ring-white"
           style={{ background: product?.brandColor ?? "#94a3b8" }}
         />
-        <h1>{product?.name ?? slug}</h1>
+        <h1 className="text-3xl">{product?.name ?? slug}</h1>
       </div>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{slug}</p>
 

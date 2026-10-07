@@ -39,18 +39,23 @@ export function BoardList({ productSlug }: { productSlug: string }) {
   }, [statusFilter]);
 
   return (
-    <main className="shell">
+    <main className="shell page-enter">
       <header className="mb-6">
-        <h1>反馈面板</h1>
+        <p className="eyebrow mb-2">{productSlug}</p>
+        <h1 className="text-3xl">反馈面板</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">有想法？告诉我们，投票支持你关心的功能。</p>
       </header>
 
       <SubmitForm productSlug={productSlug} onSubmitted={load} />
 
-      <div className="mt-8 mb-3 flex items-center justify-between">
-        <h2 className="text-base">全部反馈</h2>
+      <div className="mt-10 mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base">用户想法</h2>
+          <p className="mt-1 text-sm text-slate-500">投票支持你最关心的反馈。</p>
+        </div>
         <select
           className="select w-auto"
+          aria-label="按反馈状态筛选"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
         >
@@ -70,9 +75,9 @@ export function BoardList({ productSlug }: { productSlug: string }) {
           还没有反馈，来提第一条吧。
         </p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col">
           {items.map((item) => (
-            <li key={item.id} className="card flex items-start justify-between gap-4">
+            <li key={item.id} className="feedback-row">
               <div className="min-w-0">
                 <Link href={`/board/${item.id}`} className="font-medium text-slate-900 hover:text-indigo-600 dark:text-slate-100 dark:hover:text-indigo-400">
                   {item.title}
@@ -85,7 +90,7 @@ export function BoardList({ productSlug }: { productSlug: string }) {
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                <span className="text-sm font-medium text-slate-500">
                   {item.votes?.[0]?.count ?? 0} 票
                 </span>
                 <VoteButton productSlug={productSlug} feedbackId={item.id} onVoted={load} />
@@ -151,6 +156,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
       <input
         required
         maxLength={120}
+        aria-label="一句话描述你的想法"
         placeholder="一句话描述你的想法"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
@@ -158,6 +164,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
       />
       <textarea
         maxLength={2000}
+        aria-label="更多细节（选填）"
         placeholder="更多细节（选填）"
         value={body}
         onChange={(event) => setBody(event.target.value)}
@@ -166,6 +173,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
       <input
         required
         type="email"
+        aria-label="你的邮箱"
         placeholder="你的邮箱"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
