@@ -1,7 +1,7 @@
 // Deno Edge Function，由 Supabase Database Webhook 触发，不被业务代码直接调用。
 // 契约见 docs/API.md「事件驱动通知契约」；解耦设计动机见 docs/ARCHITECTURE.md「关键解耦点」。
-// Webhook 本身要在 Supabase Studio 里手动配置（Database → Webhooks），见该文档的说明——
-// 每个自部署实例的项目 URL 不一样，没法写进可移植的迁移脚本里。
+// Webhook triggers and their per-project Vault configuration are installed by
+// the repeatable migration and infra/Configure-SupabaseDatabaseWebhooks.ps1.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 interface WebhookPayload {
