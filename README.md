@@ -83,11 +83,7 @@ Email is event-driven: database changes trigger a Supabase Edge Function, which 
 
 ## Project status
 
-The current live deployment has been used with two products. The complete feedback loop has been verified: submit feedback, view it on the board, reply from the admin console, and receive the notification email.
-
-The Docker image and health endpoint have been verified locally. AWS staging infrastructure is being prepared; the ECS/ALB application deployment is not live yet. The widget package is implemented, but its cross-origin integration still needs end-to-end verification. A turnkey self-hosting guide and public demo are still in development.
-
-FeedbackPort is an early-stage project, not a hosted SaaS sign-up service. Self-hosting is the goal. A deployment requires your own Supabase, Turnstile, Upstash, and email configuration. Never put server-side credentials in client-side settings.
+FeedbackPort is an actively developed open-source project. Its current production deployment runs on Vercel with Supabase and supporting services; an AWS ECS/Fargate deployment is also in progress. The repository contains the application, widget, and infrastructure code, while deployment configuration depends on the environment. FeedbackPort is designed for self-hosting and is not a hosted SaaS sign-up service. Never put server-side credentials in client-side settings.
 
 ## Local development
 
@@ -201,11 +197,7 @@ https://<产品-slug>.board.<你的域名>
 
 ## 项目进度
 
-当前线上部署已接入两个产品，并验证了完整反馈流程：用户提交反馈、在面板查看、管理员回复，以及提交者收到邮件通知。
-
-Docker 镜像和健康检查已在本机验证。AWS staging 基础设施正在准备中，ECS/ALB 应用尚未上线。Widget 包已实现，但跨域接入仍需端到端验证。自部署指南和公开演示环境仍在开发中。
-
-FeedbackPort 目前处于早期开发阶段，并非注册即用的托管 SaaS。项目目标是支持自部署；部署需要你自己的 Supabase、Turnstile、Upstash 和邮件服务配置。请勿将服务端密钥放入前端配置。
+FeedbackPort 是一个持续开发中的开源项目。当前生产部署运行在 Vercel，并使用 Supabase 及相关服务；AWS ECS/Fargate 部署也在推进中。仓库包含应用、widget 和基础设施代码，具体部署配置取决于运行环境。FeedbackPort 面向自部署场景，并非注册即用的托管 SaaS。请勿将服务端密钥放入前端配置。
 
 ## 本地开发
 
