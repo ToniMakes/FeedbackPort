@@ -1,153 +1,233 @@
 # FeedbackPort
 
-A user feedback management system for **indie developers**: one person, many products, one unified inbox.
+**One developer. Multiple products. One place for feedback.**
 
-Unlike Canny / Fider / Astuto / Quackback — which are built around "one organization serving many customers" — FeedbackPort assumes a different scenario: "one developer with several unrelated products who needs a single place to see and manage everything." Key features:
+FeedbackPort is an open-source feedback hub for indie developers and small teams building multiple products. Give each product its own public feedback board, collect ideas through a lightweight website widget, and manage conversations from one product-aware workspace.
 
-- **Unified inbox across products**: the admin console aggregates feedback from every product by default, no logging in/switching per product
-- **Zero standing servers**: fully serverless (Supabase + Vercel + Resend + Cloudflare Turnstile), free tiers cover early-stage volume
-- **Independent public board per product**: subdomain-based, each with its own branding — users vote, track progress, and get emailed when a maintainer replies
-- **Framework-agnostic embed widget**: a single `<script>` tag works on any product page regardless of tech stack
-- MIT licensed — self-host it, fork it, send PRs
+Users can share ideas, vote for requests they care about, and follow progress. Developers can review feedback by product or across their entire portfolio, update statuses, and reply to users.
 
-Tech choices and the decision process live in [docs/decisions](docs/decisions); why not just use Canny/Fider/Astuto/Quackback is covered in [0001](docs/decisions/0001-self-build-vs-saas-vs-oss.md).
+## What you can do
 
-## Integrate your product
+- **Collect feedback in context.** Embed a widget on a website, or link a desktop or mobile app directly to its public board.
+- **Give each product a dedicated board.** Users can submit ideas, vote, filter by status, and read replies.
+- **Manage several products together.** Work product by product, or use the cross-product inbox to see feedback in one place.
+- **Close the loop.** Update a request’s status and reply from the admin console. Configured notification events email updates to the submitter.
+- **Integrate without a frontend framework.** The widget uses vanilla TypeScript and Shadow DOM to keep its styles isolated from the host page.
 
-Add one line before `</body>` — works on any tech stack, no build step required:
+## How it works
 
-```html
+~~~mermaid
+flowchart LR
+    User[Your users] --> Board[Public product board]
+    User --> Widget[Embeddable widget]
+    Board --> API[Next.js app and API]
+    Widget --> API
+    Admin[You] --> Console[Product workspace and inbox]
+    Console --> API
+    API --> DB[(Supabase Postgres with RLS)]
+    API --> Guard[Turnstile and Upstash rate limits]
+    DB -->|database events| Edge[Supabase Edge Function]
+    Edge --> Mail[Resend]
+    Mail --> User
+~~~
+
+## Add the widget
+
+After hosting the widget bundle and configuring your FeedbackPort instance, add this script to your product page. Replace the example URLs and key with your deployment’s values:
+
+~~~html
 <script
   src="https://cdn.your-domain.com/widget.js"
-  data-product="your-product-slug"
-  data-turnstile-site-key="1x00000000000000000000AA"
+  data-product="your-product"
+  data-api-base="https://feedback.your-domain.com"
+  data-turnstile-site-key="YOUR_TURNSTILE_SITE_KEY"
   async
 ></script>
-```
+~~~
 
-No web page at all (a desktop/mobile app)? Every registered product also gets a public voting board for free at `https://<slug>.board.your-domain.com` — just link to it from a "Feedback" menu item or settings screen.
+A product without a website can link to its board directly:
 
-Full guide — React/Next.js and Vue snippets, WordPress, pre-filling the logged-in user's email, a troubleshooting checklist, and a ready-to-copy AI-assistant prompt: **[docs/INTEGRATION.md](docs/INTEGRATION.md)**
+~~~text
+https://<product-slug>.board.<your-domain>
+~~~
 
-## Docs index
+See the [integration guide](docs/INTEGRATION.md) for React, Next.js, Vue, and static-site examples, as well as products without a web page.
 
-| Doc | Contents |
+## Designed for multiple products
+
+The app resolves a product tenant from its subdomain. Middleware extracts the product slug and passes it to the application; API routes resolve the corresponding product and apply its data scope. The widget communicates through the public API. Shared domain types and Zod schemas keep validation consistent between the web app and notification function.
+
+Security and abuse prevention are layered:
+
+- **Supabase Row Level Security (RLS)** enforces data-access rules in PostgreSQL.
+- **Cloudflare Turnstile and a honeypot field** help screen automated submissions.
+- **Upstash Redis rate limits** help curb repeated submissions and votes.
+- **Server-side credentials** stay on the server and are never included in the browser bundle.
+
+Email is event-driven: database changes trigger a Supabase Edge Function, which prepares and sends notifications through Resend. The API that records feedback does not need to send email directly.
+
+## Technology
+
+| Area | Technology |
 |---|---|
-| [docs/decisions/0001](docs/decisions/0001-self-build-vs-saas-vs-oss.md) | Self-build vs SaaS vs open-source comparison and decision |
-| [docs/decisions/0002](docs/decisions/0002-tech-stack.md) | Tech stack and monorepo package layout |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Module boundaries, multi-tenant routing, event-driven notifications, security boundaries |
-| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER diagram, table DDL, RLS policies |
-| [docs/API.md](docs/API.md) | Public endpoints, admin endpoints, widget init params, notification event contract |
-| [docs/INTEGRATION.md](docs/INTEGRATION.md) | Playbook for wiring FeedbackPort into a specific product (framework snippets + troubleshooting + an AI-assistant prompt template) |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | MVP scope, open-source release prep, later phases |
-| [infra/terraform/README.md](infra/terraform/README.md) | AWS staging infrastructure, account setup, Terraform lifecycle, and cost controls |
-| [docs/decisions/0004](docs/decisions/0004-aws-staging-infrastructure.md) | Terraform AWS staging architecture decision |
-| [docs/decisions/0005](docs/decisions/0005-aws-cli-session-auth.md) | Temporary AWS CLI session authentication for local Terraform |
+| Language and workspace | TypeScript, pnpm workspaces |
+| Web application | Next.js 15 App Router, React 19 |
+| Shared domain layer | Zod schemas and shared TypeScript types |
+| Embeddable widget | Vanilla TypeScript, Vite, Shadow DOM |
+| Database and admin authentication | Supabase Postgres, Row Level Security, Supabase Auth |
+| Abuse prevention | Cloudflare Turnstile, honeypot, Upstash Redis |
+| Notifications | Supabase Database Webhooks, Deno Edge Functions, Resend |
+| Current production hosting | Vercel |
+| Container deployment | Multi-stage Docker, Node.js 22, non-root runtime; AWS ECS/Fargate staging is in progress |
+| CI | GitHub Actions: lint, typecheck, tests, and web build |
 
-## Project structure
+## Project status
 
-```
-├── apps/web/            # Next.js: public board + admin console + API Routes
-├── packages/core/        # shared types, zod validation schemas, business-rule constants
-├── packages/widget/      # framework-agnostic embed widget
-├── supabase/
-│   ├── migrations/       # database migrations
-│   └── functions/        # Edge Functions (notifications, etc.)
-└── docs/
-```
+The current live deployment has been used with two products. The complete feedback loop has been verified: submit feedback, view it on the board, reply from the admin console, and receive the notification email.
+
+The Docker image and health endpoint have been verified locally. AWS staging infrastructure is being prepared; the ECS/ALB application deployment is not live yet. The widget package is implemented, but its cross-origin integration still needs end-to-end verification. A turnkey self-hosting guide and public demo are still in development.
+
+FeedbackPort is an early-stage project, not a hosted SaaS sign-up service. Self-hosting is the goal. A deployment requires your own Supabase, Turnstile, Upstash, and email configuration. Never put server-side credentials in client-side settings.
 
 ## Local development
 
-```bash
+~~~bash
 pnpm install
-pnpm -r typecheck
-pnpm -r lint
-pnpm -r test
-pnpm dev   # start apps/web
-```
+pnpm dev
+~~~
 
-## Current status
+The web app runs locally at http://localhost:3000. Data-backed features require the services and environment variables listed in apps/web/.env.example, plus the Supabase migrations and notification function. See the [architecture](docs/ARCHITECTURE.md), [API](docs/API.md), and [AWS staging](infra/terraform/README.md) documentation for implementation details.
 
-Phase 0 is live and verified end-to-end against a real deployment (`feedback.tonimakes.com`: Vercel + Supabase + Upstash + Cloudflare Turnstile + Resend), with two real products integrated — a web product, and `aiqd`, an Electron desktop app with no web presence of its own, linked to its public board from its Settings screen instead of the embed widget. Both have the full loop confirmed: submit → board → admin reply → notification email received. See the Phase 0 checklist in [docs/ROADMAP.md](docs/ROADMAP.md) for the full picture.
+## Documentation
+
+| Document | Description |
+|---|---|
+| [Integration guide](docs/INTEGRATION.md) | Add the widget or link a product to its board |
+| [Architecture](docs/ARCHITECTURE.md) | Tenant routing, service boundaries, notifications, and security |
+| [Data model](docs/DATA_MODEL.md) | Database schema and Row Level Security policies |
+| [API reference](docs/API.md) | Public and admin endpoints, widget configuration, notification events |
+| [Roadmap](docs/ROADMAP.md) | Current scope and planned work |
+| [Architecture decisions](docs/decisions) | Product and technology choices |
+| [AWS staging guide](infra/terraform/README.md) | Terraform stacks, account setup, cost considerations, and deployment lifecycle |
 
 ## License
 
-MIT
+FeedbackPort is available under the [MIT License](LICENSE).
 
 ---
 
 # FeedbackPort（中文）
 
-面向**独立开发者**的用户反馈管理系统：一个人、多个产品、一个统一收件箱。
+**一个开发者，多个产品，一个反馈中心。**
 
-不同于 Canny / Fider / Astuto / Quackback 这类"一个组织服务多个客户"的反馈平台，FeedbackPort 假设的场景是"一个开发者名下有好几个不相关的产品，需要一个地方统一看、统一管"。核心特点：
+FeedbackPort 是一款面向独立开发者和小团队的开源用户反馈工具。你可以为每个产品建立独立的公开反馈面板，通过轻量组件收集用户想法，再从一个产品工作区集中管理。
 
-- **跨产品统一收件箱**：管理后台默认聚合所有产品的反馈，无需逐个登录/切换
-- **零常驻服务器**：纯 serverless（Supabase + Vercel + Resend + Cloudflare Turnstile），免费额度下可支撑早期体量
-- **每产品独立公开面板**：按子域名区分，各自品牌，用户投票、看进度、被回复后收邮件通知
-- **无框架嵌入组件**：一个 `<script>` 标签即可接入任意技术栈的产品页面
-- MIT 协议，欢迎自部署、fork、提 PR
+用户可以提交想法、为关注的需求投票并跟进处理状态；开发者可以按产品查看反馈，也可以打开跨产品收件箱统一处理、更新状态和回复用户。
 
-技术选型和决策过程见 [docs/decisions](docs/decisions)，为什么不直接用现成的 Canny/Fider/Astuto/Quackback 见 [0001](docs/decisions/0001-self-build-vs-saas-vs-oss.md)。
+## 你可以用它做什么
 
-## 接入你的产品
+- **在用户所在的地方收集反馈。** 在网站嵌入组件；桌面或移动应用也可以直接链接到自己的公开面板。
+- **每个产品拥有独立面板。** 用户可以提交想法、投票、按状态筛选并查看回复。
+- **在一个工作区管理多个产品。** 可以逐个产品处理，也可以从跨产品收件箱集中查看。
+- **回应并跟进用户。** 在管理后台更新状态、回复提交者；配置好的通知事件会通过邮件告知用户。
+- **轻量接入不同技术栈。** Widget 使用原生 TypeScript 和 Shadow DOM 隔离样式，不依赖宿主页面的前端框架。
 
-在 `</body>` 前加一行——任意技术栈都能用，不需要额外构建步骤：
+## 工作流程
 
-```html
+~~~mermaid
+flowchart LR
+    User[产品用户] --> Board[公开反馈面板]
+    User --> Widget[网页嵌入组件]
+    Board --> API[Next.js 应用与 API]
+    Widget --> API
+    Admin[开发者] --> Console[产品工作区与收件箱]
+    Console --> API
+    API --> DB[(启用 RLS 的 Supabase Postgres)]
+    API --> Guard[Turnstile 与 Upstash 限流]
+    DB -->|数据库事件| Edge[Supabase Edge Function]
+    Edge --> Mail[Resend]
+    Mail --> User
+~~~
+
+## 接入嵌入组件
+
+托管 widget 文件并配置好 FeedbackPort 实例后，在产品页面中加入脚本标签。请将示例网址和密钥换成你自己的部署配置：
+
+~~~html
 <script
-  src="https://cdn.你的域名.com/widget.js"
-  data-product="你的产品slug"
-  data-turnstile-site-key="1x00000000000000000000AA"
+  src="https://cdn.your-domain.com/widget.js"
+  data-product="your-product"
+  data-api-base="https://feedback.your-domain.com"
+  data-turnstile-site-key="YOUR_TURNSTILE_SITE_KEY"
   async
 ></script>
-```
+~~~
 
-产品完全没有网页（比如桌面/移动端 App）？每个注册过的产品都自带一个免费的公开投票面板，地址是 `https://<slug>.board.你的域名.com`——直接在 App 的"意见反馈"菜单项或设置页里链过去就行。
+没有网页的产品可以直接链接到自己的反馈面板：
 
-完整接入指南——React/Next.js 和 Vue 代码片段、WordPress、已登录用户邮箱预填、排查清单、可直接复制的 AI 辅助接入提示词：**[docs/INTEGRATION.md](docs/INTEGRATION.md)**
+~~~text
+https://<产品-slug>.board.<你的域名>
+~~~
 
-## 文档索引
+[接入指南](docs/INTEGRATION.md)包含 React、Next.js、Vue、静态网页示例，以及无网页产品的接入方式。
 
-| 文档 | 内容 |
+## 为多产品场景设计
+
+应用根据产品子域名解析租户。中间件提取产品 slug 并传给应用；API 路由再解析对应产品并限定数据范围。Widget 通过公开 API 通信；共享领域类型和 Zod schema 让 Web 应用与通知函数使用一致的校验规则。
+
+安全和防刷采用分层设计：
+
+- **Supabase Row Level Security（RLS）** 在 PostgreSQL 数据层约束数据访问。
+- **Cloudflare Turnstile 与蜜罐字段** 用于筛查自动化提交。
+- **Upstash Redis 频率限制** 用于减少重复提交和投票。
+- **服务端密钥只留在服务端**，不会写进浏览器 bundle。
+
+邮件采用事件驱动方式：数据库变更触发 Supabase Edge Function，由它准备并通过 Resend 发送通知。记录反馈的 API 不需要直接承担邮件发送副作用。
+
+## 技术栈
+
+| 领域 | 技术 |
 |---|---|
-| [docs/decisions/0001](docs/decisions/0001-self-build-vs-saas-vs-oss.md) | 自建 vs SaaS vs 开源方案对比与决策 |
-| [docs/decisions/0002](docs/decisions/0002-tech-stack.md) | 技术选型与 monorepo 包结构 |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | 模块边界、多租户路由、事件驱动通知设计、安全边界 |
-| [docs/DATA_MODEL.md](docs/DATA_MODEL.md) | ER 图、表结构 DDL、RLS 策略 |
-| [docs/API.md](docs/API.md) | 公开端点、管理端点、Widget 接入参数、通知事件契约 |
-| [docs/INTEGRATION.md](docs/INTEGRATION.md) | 把 FeedbackPort 接进具体产品的操作手册（各框架代码片段 + 排查清单 + AI 辅助接入提示词） |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | MVP 范围、开源发布准备、后续阶段规划 |
-| [infra/terraform/README.md](infra/terraform/README.md) | AWS staging 基础设施、账号初始化、Terraform 生命周期与成本控制 |
-| [docs/decisions/0004](docs/decisions/0004-aws-staging-infrastructure.md) | Terraform AWS staging 架构决策 |
-| [docs/decisions/0005](docs/decisions/0005-aws-cli-session-auth.md) | 本地 Terraform 使用 AWS CLI 临时会话认证 |
+| 语言与工作区 | TypeScript、pnpm workspaces |
+| Web 应用 | Next.js 15 App Router、React 19 |
+| 共享领域层 | Zod schema、共享 TypeScript 类型 |
+| 嵌入组件 | 原生 TypeScript、Vite、Shadow DOM |
+| 数据库与管理员认证 | Supabase Postgres、Row Level Security、Supabase Auth |
+| 防刷 | Cloudflare Turnstile、蜜罐、Upstash Redis |
+| 通知 | Supabase Database Webhooks、Deno Edge Functions、Resend |
+| 当前生产托管 | Vercel |
+| 容器部署 | 多阶段 Docker、Node.js 22、非 root 运行；AWS ECS/Fargate staging 仍在建设 |
+| 持续集成 | GitHub Actions：lint、类型检查、测试和 Web 构建 |
 
-## 项目结构
+## 项目进度
 
-```
-├── apps/web/           # Next.js：公开面板 + 管理后台 + API Routes
-├── packages/core/       # 共享类型、zod 校验 schema、业务规则常量
-├── packages/widget/     # 无框架嵌入组件
-├── supabase/
-│   ├── migrations/      # 数据库迁移
-│   └── functions/       # 通知服务等 Edge Functions
-└── docs/
-```
+当前线上部署已接入两个产品，并验证了完整反馈流程：用户提交反馈、在面板查看、管理员回复，以及提交者收到邮件通知。
+
+Docker 镜像和健康检查已在本机验证。AWS staging 基础设施正在准备中，ECS/ALB 应用尚未上线。Widget 包已实现，但跨域接入仍需端到端验证。自部署指南和公开演示环境仍在开发中。
+
+FeedbackPort 目前处于早期开发阶段，并非注册即用的托管 SaaS。项目目标是支持自部署；部署需要你自己的 Supabase、Turnstile、Upstash 和邮件服务配置。请勿将服务端密钥放入前端配置。
 
 ## 本地开发
 
-```bash
+~~~bash
 pnpm install
-pnpm -r typecheck
-pnpm -r lint
-pnpm -r test
-pnpm dev   # 启动 apps/web
-```
+pnpm dev
+~~~
 
-## 当前状态
+Web 应用默认运行在 http://localhost:3000。数据功能需要按 apps/web/.env.example 配置服务，并应用 Supabase migrations、部署通知函数。实现细节见[架构文档](docs/ARCHITECTURE.md)、[API 文档](docs/API.md)和[AWS staging 文档](infra/terraform/README.md)。
 
-Phase 0 已经真实上线并端到端验证过了（`feedback.tonimakes.com`：Vercel + Supabase + Upstash + Cloudflare Turnstile + Resend），目前接入了两个真实产品——一个网页产品，以及 `aiqd`（一个没有自己网页形态的 Electron 桌面应用，它在 Settings 页链到公开面板，而不是用嵌入组件）。两个产品的完整链路都确认跑通了：提交 → 面板 → 管理员回复 → 收到通知邮件。完整进度见 [docs/ROADMAP.md](docs/ROADMAP.md) 的 Phase 0 checklist。
+## 文档
 
-## License
+| 文档 | 内容 |
+|---|---|
+| [接入指南](docs/INTEGRATION.md) | 嵌入 widget 或将产品链接到反馈面板 |
+| [架构文档](docs/ARCHITECTURE.md) | 租户路由、模块边界、通知与安全设计 |
+| [数据模型](docs/DATA_MODEL.md) | 数据库结构与 Row Level Security 策略 |
+| [API 参考](docs/API.md) | 公开和管理端点、widget 配置、通知事件 |
+| [迭代路线图](docs/ROADMAP.md) | 当前范围与后续计划 |
+| [架构决策](docs/decisions) | 产品与技术方案记录 |
+| [AWS staging 文档](infra/terraform/README.md) | Terraform 资源层次、账号设置、成本与部署生命周期 |
 
-MIT
+## 许可证
+
+FeedbackPort 使用 [MIT License](LICENSE)。
