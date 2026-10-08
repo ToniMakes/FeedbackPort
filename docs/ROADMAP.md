@@ -22,9 +22,9 @@
 - [x] README with an architecture diagram and screenshots (`docs/images/`) captured from the seeded local instance, plus a short demo GIF
 - [x] Deployment guide covering local, Docker (`docker-compose.yml`), and Vercel + Supabase (`docs/DEPLOYMENT.md`); a one-click deploy button is not provided
 - [x] GitHub Actions CI (lint + typecheck + test)
-- [x] Example tenant seed data: fictional `demo` product (`supabase/seed.sql`, runs on `supabase db reset`)
+- [x] Example tenant seed data: fictional `lumen` product (`supabase/seed.sql`, runs on `supabase db reset`)
 - [x] MIT LICENSE file
-- [x] A public demo at `demo.board.tonimakes.com`: a fictional `demo` product on the production deployment, seeded from `supabase/seed.sql`. The scheduled reset (`.github/workflows/demo-reset.yml`) stays inert until a `DEMO_DATABASE_URL` secret is set, so until then visitor submissions are cleared by re-running the seed by hand
+- [x] A public sample board at `lumen.board.tonimakes.com`: a fictional `lumen` product on the production deployment, seeded from `supabase/seed.sql`. The scheduled reset (`.github/workflows/demo-reset.yml`) stays inert until a `DEMO_DATABASE_URL` secret is set, so until then visitor submissions are cleared by re-running the seed by hand
 
 **Acceptance criteria**: a stranger clones the repo and, following the README, has a local instance running within 15 minutes.
 
@@ -75,9 +75,9 @@
 - [x] README 含架构图和截图（`docs/images/`，取自种子数据的本地实例），另有简短演示 GIF
 - [x] 部署指南，覆盖本地、Docker（`docker-compose.yml`）和 Vercel + Supabase（`docs/DEPLOYMENT.md`）；不提供一键部署按钮
 - [x] GitHub Actions CI（lint + typecheck + test）
-- [x] 示例租户种子数据：虚构的 `demo` 产品（`supabase/seed.sql`，`supabase db reset` 时自动执行）
+- [x] 示例租户种子数据：虚构的 `lumen` 产品（`supabase/seed.sql`，`supabase db reset` 时自动执行）
 - [x] MIT LICENSE 文件
-- [x] 公开 Demo：`demo.board.tonimakes.com`，在生产部署上放一个虚构的 `demo` 产品，数据来自 `supabase/seed.sql`。定时重置（`.github/workflows/demo-reset.yml`）在设置 `DEMO_DATABASE_URL` secret 之前不会执行，此前需要手动重新执行种子脚本来清理访客提交的内容
+- [x] 公开示例面板：`lumen.board.tonimakes.com`，在生产部署上放一个虚构的 `lumen` 产品，数据来自 `supabase/seed.sql`。定时重置（`.github/workflows/demo-reset.yml`）在设置 `DEMO_DATABASE_URL` secret 之前不会执行，此前需要手动重新执行种子脚本来清理访客提交的内容
 
 **验收标准**：陌生人 clone 仓库后，跟着 README 能在 15 分钟内跑起一个本地实例。
 

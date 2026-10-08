@@ -18,7 +18,7 @@ pnpm install
 npx supabase start
 ```
 
-`supabase start` applies every migration in `supabase/migrations/` and then `supabase/seed.sql`, which creates a fictional product with the slug `demo` and a handful of ideas in every status. When it finishes it prints the API URL and the keys. Use the legacy `ANON_KEY` and `SERVICE_ROLE_KEY` values (run `npx supabase status -o env` to print them again); the app's Supabase clients expect those JWT-style keys.
+`supabase start` applies every migration in `supabase/migrations/` and then `supabase/seed.sql`, which creates a fictional product with the slug `lumen` and a handful of ideas in every status. When it finishes it prints the API URL and the keys. Use the legacy `ANON_KEY` and `SERVICE_ROLE_KEY` values (run `npx supabase status -o env` to print them again); the app's Supabase clients expect those JWT-style keys.
 
 Create `apps/web/.env.local` from `apps/web/.env.example`:
 
@@ -28,7 +28,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon key from supabase start>
 SUPABASE_SERVICE_ROLE_KEY=<service_role key from supabase start>
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
-DEFAULT_TENANT_SLUG=demo
+DEFAULT_TENANT_SLUG=lumen
 ```
 
 The two Turnstile values are Cloudflare's published always-pass test keys. Leave the Upstash variables empty: outside production the rate limiter is skipped.
@@ -39,9 +39,9 @@ pnpm dev
 
 - Public board: <http://localhost:3000/board>
 - Admin console: <http://localhost:3000/login>. There is no sign-up. Create your admin user in Supabase Studio (<http://127.0.0.1:54323>, Authentication, Add user), request a magic link on the login page, and read the email in the local mail catcher at <http://127.0.0.1:54324>.
-- Widget: run `pnpm widget:publish` to build it into `apps/web/public/widget.js`, then follow the [integration guide](INTEGRATION.md) with `data-api-base="http://localhost:3000"` and `data-product="demo"`.
+- Widget: run `pnpm widget:publish` to build it into `apps/web/public/widget.js`, then follow the [integration guide](INTEGRATION.md) with `data-api-base="http://localhost:3000"` and `data-product="lumen"`.
 
-Reset the demo data at any time with `npx supabase db reset`.
+Reset the sample data at any time with `npx supabase db reset`.
 
 ## 2. Docker (any host that runs containers)
 
@@ -67,14 +67,14 @@ Supabase must be reachable at the same URL from the browser and from the contain
 7. **Widget.** Run `pnpm widget:publish` and serve `apps/web/public/widget.js` from the app itself or any CDN.
 8. **First product.** Sign in at `/login`, add a product in the admin console, and follow the [integration guide](INTEGRATION.md).
 
-## Public demo
+## Public sample board
 
-The simplest public demo needs no extra infrastructure: add a fictional `demo` product to a deployment you already run, and visitors open `https://demo.board.your-domain.com/board`. The wildcard board domain from the production setup already routes it.
+The simplest public sample board needs no extra infrastructure: add a fictional `lumen` product to a deployment you already run, and visitors open `https://lumen.board.your-domain.com/board`. The wildcard board domain from the production setup already routes it.
 
-1. Run `supabase/seed.sql` against that project once (paste it into the Supabase SQL editor, or `psql "$DATABASE_URL" -f supabase/seed.sql`). It only touches the product with slug `demo`, and it suspends the reply triggers while it runs, so the notification webhook never emails the sample addresses.
+1. Run `supabase/seed.sql` against that project once (paste it into the Supabase SQL editor, or `psql "$DATABASE_URL" -f supabase/seed.sql`). It only touches the product with slug `lumen`, and it suspends the reply triggers while it runs, so the notification webhook never emails the sample addresses.
 2. To reset visitor submissions automatically, add the project's Postgres connection string as the `DEMO_DATABASE_URL` repository secret. `.github/workflows/demo-reset.yml` then re-runs the seed every day.
 
-If you would rather keep demo traffic away from real data, deploy a second copy with its own Supabase project and `DEFAULT_TENANT_SLUG=demo`, then point `DEMO_DATABASE_URL` at that project instead.
+If you would rather keep sample-board traffic away from real data, deploy a second copy with its own Supabase project and `DEFAULT_TENANT_SLUG=lumen`, then point `DEMO_DATABASE_URL` at that project instead.
 
 ---
 
@@ -98,7 +98,7 @@ pnpm install
 npx supabase start
 ```
 
-`supabase start` 会应用 `supabase/migrations/` 下所有迁移，再执行 `supabase/seed.sql`：它会创建一个 slug 为 `demo` 的虚构产品，以及每种状态各有的若干想法。完成后会打印 API 地址和各种密钥。请使用旧式的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`（可用 `npx supabase status -o env` 重新打印）。
+`supabase start` 会应用 `supabase/migrations/` 下所有迁移，再执行 `supabase/seed.sql`：它会创建一个 slug 为 `lumen` 的虚构产品，以及每种状态各有的若干想法。完成后会打印 API 地址和各种密钥。请使用旧式的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`（可用 `npx supabase status -o env` 重新打印）。
 
 按 `apps/web/.env.example` 创建 `apps/web/.env.local`：
 
@@ -108,7 +108,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase start 输出的 anon key>
 SUPABASE_SERVICE_ROLE_KEY=<supabase start 输出的 service_role key>
 NEXT_PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
-DEFAULT_TENANT_SLUG=demo
+DEFAULT_TENANT_SLUG=lumen
 ```
 
 两个 Turnstile 值是 Cloudflare 公布的永远通过的测试 key。Upstash 变量留空即可：非生产环境会跳过频率限制。
@@ -119,7 +119,7 @@ pnpm dev
 
 - 公开面板：<http://localhost:3000/board>
 - 管理后台：<http://localhost:3000/login>。没有注册入口，请先在 Supabase Studio（<http://127.0.0.1:54323>，Authentication，Add user）创建管理员，在登录页请求 magic link，再到本地邮件收件箱 <http://127.0.0.1:54324> 查看邮件。
-- 嵌入组件：运行 `pnpm widget:publish` 把它构建到 `apps/web/public/widget.js`，再按[接入指南](INTEGRATION.md)接入，设置 `data-api-base="http://localhost:3000"` 和 `data-product="demo"`。
+- 嵌入组件：运行 `pnpm widget:publish` 把它构建到 `apps/web/public/widget.js`，再按[接入指南](INTEGRATION.md)接入，设置 `data-api-base="http://localhost:3000"` 和 `data-product="lumen"`。
 
 随时可用 `npx supabase db reset` 重置演示数据。
 
@@ -147,11 +147,11 @@ Supabase 必须能从浏览器和容器用同一个地址访问，所以 `NEXT_P
 7. **Widget**：运行 `pnpm widget:publish`，把 `apps/web/public/widget.js` 放在应用自身或任意 CDN 上。
 8. **第一个产品**：在 `/login` 登录，于管理后台添加产品，再按[接入指南](INTEGRATION.md)接入。
 
-## 公开 Demo
+## 公开示例面板
 
-最简单的公开 Demo 不需要额外基础设施：在你已有的部署里加一个虚构的 `demo` 产品，访客打开 `https://demo.board.你的域名.com/board` 即可，生产环境配置好的泛域名会直接路由过去。
+最简单的公开示例面板不需要额外基础设施：在你已有的部署里加一个虚构的 `lumen` 产品，访客打开 `https://lumen.board.你的域名.com/board` 即可，生产环境配置好的泛域名会直接路由过去。
 
-1. 对该项目执行一次 `supabase/seed.sql`（粘贴到 Supabase SQL 编辑器，或 `psql "$DATABASE_URL" -f supabase/seed.sql`）。它只会改动 slug 为 `demo` 的产品，并在执行期间暂停回复上的触发器，所以通知 webhook 不会给示例地址发邮件。
+1. 对该项目执行一次 `supabase/seed.sql`（粘贴到 Supabase SQL 编辑器，或 `psql "$DATABASE_URL" -f supabase/seed.sql`）。它只会改动 slug 为 `lumen` 的产品，并在执行期间暂停回复上的触发器，所以通知 webhook 不会给示例地址发邮件。
 2. 想自动清理访客提交的内容，就把该项目的 Postgres 连接串存为仓库 secret `DEMO_DATABASE_URL`，`.github/workflows/demo-reset.yml` 会每天重新执行种子脚本。
 
-如果想让 Demo 流量远离真实数据，可以另外部署一份，配独立的 Supabase 项目和 `DEFAULT_TENANT_SLUG=demo`，再让 `DEMO_DATABASE_URL` 指向那个项目。
+如果想让示例面板的流量远离真实数据，可以另外部署一份，配独立的 Supabase 项目和 `DEFAULT_TENANT_SLUG=lumen`，再让 `DEMO_DATABASE_URL` 指向那个项目。

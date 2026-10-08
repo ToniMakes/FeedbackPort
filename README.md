@@ -11,9 +11,9 @@ FeedbackPort is an open-source feedback hub for indie developers and small teams
 - Review and reply to feedback by product or across your portfolio.
 - Show users the current status of each idea on the public board.
 
-## Live demo
+## Live sample board
 
-Try the public board with sample data: <https://demo.board.tonimakes.com/board>. It is a fictional product, and visitor submissions are cleared periodically.
+Try the public board with sample data for a fictional product: <https://lumen.board.tonimakes.com/board>. It is a fictional product, and visitor submissions are cleared periodically.
 
 ## Screenshots
 
@@ -66,17 +66,17 @@ Each product gets its own board and widget; the admin console shows all of them 
 
 FeedbackPort is designed to run on your infrastructure; it is not a hosted SaaS sign-up service. Production currently runs on Vercel, and an AWS ECS/Fargate staging environment is used for deployment verification. Your deployment needs Supabase for the database and admin authentication, Cloudflare Turnstile and Upstash Redis for abuse prevention, and optional Resend configuration for email notifications.
 
-The [deployment guide](docs/DEPLOYMENT.md) covers a local instance, Docker (`docker compose up`), and Vercel with hosted Supabase, plus how to run a self-resetting public demo. Never put server-side credentials in client-side settings. See the [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API reference](docs/API.md), and [AWS staging guide](infra/terraform/README.md) for implementation details.
+The [deployment guide](docs/DEPLOYMENT.md) covers a local instance, Docker (`docker compose up`), and Vercel with hosted Supabase, plus how to run a self-resetting public sample board. Never put server-side credentials in client-side settings. See the [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API reference](docs/API.md), and [AWS staging guide](infra/terraform/README.md) for implementation details.
 
 ## Local development
 
 ~~~bash
 pnpm install
-npx supabase start    # local database, migrations, and demo seed data
+npx supabase start    # local database, migrations, and sample data
 pnpm dev
 ~~~
 
-Add the keys printed by `supabase start` to `apps/web/.env.local` as described in the [deployment guide](docs/DEPLOYMENT.md#1-local-instance-about-15-minutes), then open <http://localhost:3000/board> to see the seeded demo product. See the [integration guide](docs/INTEGRATION.md) before embedding the widget.
+Add the keys printed by `supabase start` to `apps/web/.env.local` as described in the [deployment guide](docs/DEPLOYMENT.md#1-local-instance-about-15-minutes), then open <http://localhost:3000/board> to see the seeded sample product (Lumen Notes). See the [integration guide](docs/INTEGRATION.md) before embedding the widget.
 
 ## Technology
 
@@ -97,7 +97,7 @@ Add the keys printed by `supabase start` to `apps/web/.env.local` as described i
 | Document | Description |
 |---|---|
 | [Integration guide](docs/INTEGRATION.md) | Add the widget or link a product to its board |
-| [Deployment guide](docs/DEPLOYMENT.md) | Run locally, with Docker, or on Vercel and Supabase; set up a demo |
+| [Deployment guide](docs/DEPLOYMENT.md) | Run locally, with Docker, or on Vercel and Supabase; set up a sample board |
 | [Architecture](docs/ARCHITECTURE.md) | Tenant routing, service boundaries, notifications, and security |
 | [Data model](docs/DATA_MODEL.md) | Database schema and Row Level Security policies |
 | [API reference](docs/API.md) | Public and admin endpoints, widget configuration, and notification events |
@@ -125,9 +125,9 @@ FeedbackPort 是面向独立开发者和小团队的开源反馈工具。为每�
 - 按产品或跨产品查看反馈、更新状态并回复用户。
 - 在公开面板展示每条想法的当前状态。
 
-## 在线演示
+## 在线示例面板
 
-用示例数据体验公开面板：<https://demo.board.tonimakes.com/board>。这是一个虚构的产品，访客提交的内容会定期清理。
+用虚构产品的示例数据体验公开面板：<https://lumen.board.tonimakes.com/board>。这是一个虚构的产品，访客提交的内容会定期清理。
 
 ## 截图
 
@@ -180,7 +180,7 @@ flowchart LR
 
 FeedbackPort 面向自部署场景，并非注册即用的托管 SaaS。当前生产环境运行在 Vercel，AWS ECS/Fargate staging 环境用于验证部署。运行需要 Supabase 数据库和管理员认证、Cloudflare Turnstile 与 Upstash Redis 防刷；邮件通知还需要配置 Resend。
 
-[部署指南](docs/DEPLOYMENT.md)涵盖本地实例、Docker（`docker compose up`）、Vercel + 托管 Supabase，以及如何运行会自动重置的公开 Demo。请勿将服务端密钥放入前端配置。实现细节见[架构文档](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[API 参考](docs/API.md)和[AWS staging 指南](infra/terraform/README.md)。
+[部署指南](docs/DEPLOYMENT.md)涵盖本地实例、Docker（`docker compose up`）、Vercel + 托管 Supabase，以及如何运行会自动重置的公开示例面板。请勿将服务端密钥放入前端配置。实现细节见[架构文档](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[API 参考](docs/API.md)和[AWS staging 指南](infra/terraform/README.md)。
 
 ## 本地开发
 
@@ -190,7 +190,7 @@ npx supabase start    # 本地数据库、迁移和演示种子数据
 pnpm dev
 ~~~
 
-按[部署指南](docs/DEPLOYMENT.md)把 `supabase start` 输出的密钥写入 `apps/web/.env.local`，然后打开 <http://localhost:3000/board> 查看种子里的演示产品。嵌入 widget 前请先查看[接入指南](docs/INTEGRATION.md)。
+按[部署指南](docs/DEPLOYMENT.md)把 `supabase start` 输出的密钥写入 `apps/web/.env.local`，然后打开 <http://localhost:3000/board> 查看种子里的示例产品（Lumen Notes）。嵌入 widget 前请先查看[接入指南](docs/INTEGRATION.md)。
 
 ## 技术栈
 
@@ -211,7 +211,7 @@ pnpm dev
 | 文档 | 内容 |
 |---|---|
 | [接入指南](docs/INTEGRATION.md) | 嵌入 widget 或将产品链接到反馈面板 |
-| [部署指南](docs/DEPLOYMENT.md) | 本地、Docker、Vercel + Supabase 运行方式及 Demo 配置 |
+| [部署指南](docs/DEPLOYMENT.md) | 本地、Docker、Vercel + Supabase 运行方式及示例面板配置 |
 | [架构文档](docs/ARCHITECTURE.md) | 租户路由、模块边界、通知与安全设计 |
 | [数据模型](docs/DATA_MODEL.md) | 数据库结构与 Row Level Security 策略 |
 | [API 参考](docs/API.md) | 公开和管理端点、widget 配置与通知事件 |
