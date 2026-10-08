@@ -1,15 +1,15 @@
 /**
- * 防刷频率限制常量，见 docs/ARCHITECTURE.md 的"防刷三层"设计。
- * 由 apps/web 的 API Routes 读取，写入/读取 Redis 时使用同一份阈值，
- * 避免前后端或不同端点各写一套导致漂移。
+ * Rate-limit constants; see the three-layer anti-abuse design in docs/ARCHITECTURE.md.
+ * Read by the API Routes in apps/web so that writing to and reading from Redis uses a single set of thresholds,
+ * instead of the frontend/backend or different endpoints each defining their own and drifting apart.
  */
 export const RATE_LIMITS = {
-  /** 提交反馈：门槛更严格 */
+  /** Submitting feedback: stricter limit */
   submitFeedback: {
     windowSeconds: 60 * 10,
     maxRequests: 3,
   },
-  /** 投票：门槛更宽松，但仍需限制脚本刷票 */
+  /** Voting: looser limit, but still enough to curb scripted ballot stuffing */
   vote: {
     windowSeconds: 60,
     maxRequests: 10,

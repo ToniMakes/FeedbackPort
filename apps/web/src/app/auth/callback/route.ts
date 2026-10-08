@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 
-/** Magic link 落地页：把 URL 里的 code 换成登录 session，然后跳回管理后台 */
+/** Magic link landing route: exchange the code in the URL for a session, then redirect back to the admin console */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");

@@ -62,7 +62,7 @@ sequenceDiagram
 
 Local dev and test environments fall back to the `DEFAULT_TENANT_SLUG` env var instead of relying on a real subdomain.
 
-**Known gap**: that `product_id` lookup isn't cached — every request re-queries `products`. Fine at current volume; worth revisiting once there's real traffic to justify the added complexity (see `lib/tenant.ts`).
+**Caching**: `lib/tenant.ts` keeps successful slug lookups in a per-instance in-memory cache for 60 seconds, so a busy board doesn't re-query `products` on every request. Misses are not cached (a newly registered product shows up immediately); edits to a cached product can take up to a minute to propagate to other instances. A shared cache (e.g. Redis) is only worth adding if real traffic calls for it.
 
 ## Cross-product unified inbox
 
@@ -163,7 +163,7 @@ sequenceDiagram
 
 本地开发和测试环境通过环境变量 `DEFAULT_TENANT_SLUG` 兜底，不依赖真实子域名。
 
-**已知的缺口**：这个 `product_id` 查询没有做缓存，每次请求都会重新查一次 `products` 表。现在这个体量下没问题，等真有流量数据支撑"值不值得为这个加复杂度"的时候再考虑（见 `lib/tenant.ts`）。
+**缓存**：`lib/tenant.ts` 把成功的 slug 查询结果在每个服务实例的内存里缓存 60 秒，繁忙的面板不必每次请求都查一遍 `products`。查不到的结果不缓存（新注册的产品立刻可见）；已缓存产品的修改最多需要一分钟才会传播到其他实例。只有真实流量需要时才值得再加共享缓存（如 Redis）。
 
 ## 跨产品统一收件箱
 

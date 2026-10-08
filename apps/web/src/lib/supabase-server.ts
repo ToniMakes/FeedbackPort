@@ -2,9 +2,9 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 /**
- * 绑定当前请求 cookies 的 Supabase 客户端，用于 Server Component / Route Handler
- * 读取管理员登录态。跟 supabase-admin.ts 的 service-role 客户端是两回事——
- * 这个客户端受 RLS 约束，只代表"当前登录用户"这一个身份，不能绕过权限。
+ * Supabase client bound to the current request's cookies, used by Server Components / Route Handlers
+ * to read the admin login state. It is not the service-role client in supabase-admin.ts:
+ * this one is subject to RLS and only represents the currently signed-in user, so it can't bypass permissions.
  */
 export async function getSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -24,8 +24,8 @@ export async function getSupabaseServerClient() {
         try {
           cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         } catch {
-          // Server Component 里 cookies() 是只读的，写入会抛错——没关系，
-          // session 刷新已经在 middleware.ts 里做了，这里静默忽略即可
+          // cookies() is read-only in Server Components, so writing throws; that's fine,
+          // the session refresh already happens in middleware.ts, so ignore it silently here
         }
       },
     },
