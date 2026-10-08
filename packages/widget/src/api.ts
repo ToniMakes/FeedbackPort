@@ -6,9 +6,9 @@ export interface SubmitFeedbackResult {
 }
 
 /**
- * 调用 POST /api/feedback（跨域请求，见 docs/API.md）。
- * Turnstile token 的获取由 ui.ts 在渲染表单时通过 Turnstile 官方脚本完成，
- * 这里只负责把已经拿到的 token 一起发出去。
+ * Calls POST /api/feedback (cross-origin; see docs/API.md).
+ * The Turnstile token is obtained by ui.ts through the official Turnstile script while rendering the form;
+ * this function only sends the token it already has along with the request.
  */
 export async function submitFeedback(
   apiBase: string,
@@ -21,7 +21,7 @@ export async function submitFeedback(
   });
 
   if (!response.ok) {
-    throw new Error(`提交反馈失败：HTTP ${response.status}`);
+    throw new Error(`Failed to submit feedback: HTTP ${response.status}`);
   }
 
   return (await response.json()) as SubmitFeedbackResult;

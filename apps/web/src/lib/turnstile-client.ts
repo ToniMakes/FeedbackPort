@@ -38,9 +38,9 @@ function loadTurnstileScript(): Promise<void> {
 }
 
 /**
- * 在指定容器渲染一次性 Turnstile 挑战，拿到 token 就 resolve 并销毁 widget。
- * 本地开发不需要真实 Cloudflare 账号：用官方测试 site key
- * 1x00000000000000000000AA（永远通过验证），见 docs/ROADMAP.md。
+ * Render a one-shot Turnstile challenge in the given container; resolve with the token and destroy the widget.
+ * Local development doesn't need a real Cloudflare account: use the official test site key
+ * 1x00000000000000000000AA (always passes); see docs/ROADMAP.md.
  */
 export async function getTurnstileToken(container: HTMLElement, siteKey: string): Promise<string> {
   await loadTurnstileScript();

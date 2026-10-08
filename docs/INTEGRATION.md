@@ -1,13 +1,13 @@
 # Integration Guide
 
-The playbook for "wiring FeedbackPort into a specific product." Written for you — or for you to hand straight to an AI coding assistant and have it follow along.
+Connect a product to FeedbackPort with a public board or an embedded feedback widget.
 
 ## Prerequisite: register the product first
 
 Every product you integrate needs a row in the `products` table before it has a `slug` to use. Two ways to do that:
 
-1. **Admin console** (the normal way): log into `/admin` → New Product → fill in slug (e.g. `cardwhisper`, lowercase letters/digits/hyphens only), name, brand_color
-2. **Manual fallback**: insert a row directly via the Supabase Studio Table Editor, or run:
+1. **Admin console**: sign in to `/admin` → Add product → enter a slug (for example, `cardwhisper`), product name, and brand color
+2. **Supabase Studio**: insert a row in the Table Editor, or run:
 
 ```sql
 insert into products (slug, name, brand_color)
@@ -18,20 +18,22 @@ You need the slug in hand before doing the integration steps below.
 
 ## 30-second integration (plain HTML / any static site)
 
-Add one line before `</body>`:
+Add this script before `</body>`. Replace the example URLs, product slug, and key with your deployment values:
 
 ```html
 <script
   src="https://cdn.your-domain.com/widget.js"
+  data-api-base="https://feedback.your-domain.com"
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
+  data-lang="en"
   async
 ></script>
 ```
 
-`data-turnstile-site-key` is required — see [API.md](API.md#widget-init-parameters) for why, and note that `1x00000000000000000000AA` is Cloudflare's public test key (always passes), handy for trying this out before you have a real Turnstile site.
+`data-turnstile-site-key` is required. `1x00000000000000000000AA` is Cloudflare's public test key for local trials; use your own site key in production. The widget follows the visitor's browser language (English or Simplified Chinese) unless `data-lang="en"` or `data-lang="zh"` is set.
 
-No extra init code needed — the script mounts a floating feedback entry point on its own.
+The script mounts a floating feedback button. The optional `data-api-base` defaults to the script's origin; set it if the widget and FeedbackPort API use different domains.
 
 ## React / Next.js
 
@@ -43,10 +45,14 @@ import { useEffect } from 'react';
 export function FeedbackWidget({
   productSlug,
   turnstileSiteKey,
+  apiBase,
+  lang,
   userEmail,
 }: {
   productSlug: string;
   turnstileSiteKey: string;
+  apiBase: string;
+  lang?: 'en' | 'zh';
   userEmail?: string;
 }) {
   useEffect(() => {
@@ -55,16 +61,18 @@ export function FeedbackWidget({
     script.async = true;
     script.dataset.product = productSlug;
     script.dataset.turnstileSiteKey = turnstileSiteKey;
+    script.dataset.apiBase = apiBase;
+    if (lang) script.dataset.lang = lang;
     if (userEmail) script.dataset.userEmail = userEmail;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
-  }, [productSlug, turnstileSiteKey, userEmail]);
+  }, [productSlug, turnstileSiteKey, apiBase, lang, userEmail]);
 
   return null;
 }
 ```
 
-Usage: `<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} userEmail={session?.user?.email} />`, dropped into the root layout to take effect site-wide.
+Usage: `<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} apiBase="https://feedback.your-domain.com" lang="en" userEmail={session?.user?.email} />`, placed in the root layout to show the widget across the site.
 
 ## Vue
 
@@ -72,7 +80,7 @@ Usage: `<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.
 <script setup lang="ts">
 import { onMounted } from 'vue';
 
-const props = defineProps<{ productSlug: string; turnstileSiteKey: string; userEmail?: string }>();
+const props = defineProps<{ productSlug: string; turnstileSiteKey: string; apiBase: string; lang?: 'en' | 'zh'; userEmail?: string }>();
 
 onMounted(() => {
   const script = document.createElement('script');
@@ -80,6 +88,8 @@ onMounted(() => {
   script.async = true;
   script.dataset.product = props.productSlug;
   script.dataset.turnstileSiteKey = props.turnstileSiteKey;
+  script.dataset.apiBase = props.apiBase;
+  if (props.lang) script.dataset.lang = props.lang;
   if (props.userEmail) script.dataset.userEmail = props.userEmail;
   document.body.appendChild(script);
 });
@@ -93,7 +103,7 @@ Theme editor → footer (footer.php, or a "custom HTML/JS" plugin) — paste in 
 
 ## Pre-filling the logged-in user's email
 
-If the product already has its own login, pass the current user's email into `data-user-email` (see the React/Vue examples above) so users don't have to type it in when submitting feedback or voting. Leave it out and logged-out users just type it in manually — the two modes coexist without conflict. **This is not identity verification** — it just saves one input; the backend never checks whether that email actually belongs to the currently logged-in user.
+If the product already has its own login, pass the current user's email into `data-user-email` (see the React/Vue examples above) so users don't have to type it when submitting feedback. Leave it out and users can enter it themselves. **This is not identity verification** — it only pre-fills a field; the backend does not check whether the email belongs to the logged-in user.
 
 ## Public board URL
 
@@ -105,9 +115,11 @@ https://<slug>.board.your-domain.com
 
 Feel free to drop this link straight into the product's "feedback" entry point, changelog footer, etc. — no extra deployment needed.
 
+For the current staging environment, the AI Agent Quota Dashboard board is at `https://aiqd.board.fp-staging.tonimakes.com/board`. The embeddable widget is served from `https://fp-staging.tonimakes.com/widget.js`; set `data-api-base` to `https://fp-staging.tonimakes.com` when embedding it on another site.
+
 ## About CORS
 
-Widget requests to the API are cross-origin (host domain ≠ FeedbackPort domain). The backend already has CORS enabled for the submit-feedback and vote endpoints, so the host domain needs no extra configuration. If you're using Cloudflare Turnstile, remember to add the host product's domain to the allowed list in the Turnstile dashboard — otherwise verification will fail (this is the most common integration gotcha).
+Widget requests to the API are cross-origin when the host and FeedbackPort use different domains. The feedback and vote endpoints answer `OPTIONS` preflight requests and include CORS headers on their `POST` responses. Add the host product's domain to the Cloudflare Turnstile allowed-hostname list or verification will fail.
 
 ## Troubleshooting checklist
 
@@ -137,14 +149,14 @@ This prompt assumes the AI assistant can read `docs/INTEGRATION.md` (paste it in
 
 # 接入指南（中文）
 
-给"要把 FeedbackPort 接进某个具体产品"的场景用的操作手册。目标读者是你自己（或者你直接把这份文档丢给 AI 编程助手，让它照着做）。
+将产品连接到 FeedbackPort：可以接入公开面板，也可以嵌入反馈组件。
 
 ## 前提：先注册产品
 
 每个要接入的产品都要在 `products` 表里有一行，才有 `slug` 可用。两种方式：
 
-1. **管理后台**（正常方式）：登录 `/admin` → 新增产品 → 填 slug（比如 `cardwhisper`，只能小写字母数字连字符）、name、brand_color
-2. **手动兜底方式**：直接在 Supabase Studio 的 Table Editor 里插一行，或者跑：
+1. **管理后台**：登录 `/admin` → 新增产品 → 填写 slug（例如 `cardwhisper`）、产品名称和品牌色
+2. **Supabase Studio**：在 Table Editor 里插入一行，或者运行：
 
 ```sql
 insert into products (slug, name, brand_color)
@@ -155,20 +167,22 @@ values ('cardwhisper', 'CardWhisper', '#6366f1');
 
 ## 30 秒接入（纯 HTML / 任意静态站）
 
-在 `</body>` 前加一行：
+在 `</body>` 前加入下面的脚本，并将示例网址、产品 slug 和密钥替换为自己的部署配置：
 
 ```html
 <script
   src="https://cdn.你的域名.com/widget.js"
+  data-api-base="https://feedback.你的域名.com"
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
+  data-lang="zh"
   async
 ></script>
 ```
 
-`data-turnstile-site-key` 是必填的，为什么见 [API.md](API.md#widget-初始化参数)；`1x00000000000000000000AA` 是 Cloudflare 官方的公开测试 key（永远通过），在还没有真实 Turnstile site 之前先用这个跑通。
+`data-turnstile-site-key` 必填。`1x00000000000000000000AA` 是 Cloudflare 提供的公开测试 key，可用于本地试用；生产环境请换成自己的 site key。组件默认跟随访问者的浏览器语言（英文或简体中文），也可以通过 `data-lang="en"` 或 `data-lang="zh"` 指定语言。
 
-不需要额外初始化代码，脚本自己会在页面上挂一个悬浮反馈入口。
+脚本会在页面上挂载悬浮反馈按钮。若 widget 和 FeedbackPort API 使用不同域名，请通过 `data-api-base` 指定 API 地址；省略时默认使用脚本所在域名。
 
 ## React / Next.js
 
@@ -180,10 +194,14 @@ import { useEffect } from 'react';
 export function FeedbackWidget({
   productSlug,
   turnstileSiteKey,
+  apiBase,
+  lang,
   userEmail,
 }: {
   productSlug: string;
   turnstileSiteKey: string;
+  apiBase: string;
+  lang?: 'en' | 'zh';
   userEmail?: string;
 }) {
   useEffect(() => {
@@ -192,16 +210,18 @@ export function FeedbackWidget({
     script.async = true;
     script.dataset.product = productSlug;
     script.dataset.turnstileSiteKey = turnstileSiteKey;
+    script.dataset.apiBase = apiBase;
+    if (lang) script.dataset.lang = lang;
     if (userEmail) script.dataset.userEmail = userEmail;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
-  }, [productSlug, turnstileSiteKey, userEmail]);
+  }, [productSlug, turnstileSiteKey, apiBase, lang, userEmail]);
 
   return null;
 }
 ```
 
-用法：`<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} userEmail={session?.user?.email} />`，放在根布局里即可全站生效。
+用法：`<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} apiBase="https://feedback.你的域名.com" lang="zh" userEmail={session?.user?.email} />`，放在根布局里即可全站显示。
 
 ## Vue
 
@@ -209,7 +229,7 @@ export function FeedbackWidget({
 <script setup lang="ts">
 import { onMounted } from 'vue';
 
-const props = defineProps<{ productSlug: string; turnstileSiteKey: string; userEmail?: string }>();
+const props = defineProps<{ productSlug: string; turnstileSiteKey: string; apiBase: string; lang?: 'en' | 'zh'; userEmail?: string }>();
 
 onMounted(() => {
   const script = document.createElement('script');
@@ -217,6 +237,8 @@ onMounted(() => {
   script.async = true;
   script.dataset.product = props.productSlug;
   script.dataset.turnstileSiteKey = props.turnstileSiteKey;
+  script.dataset.apiBase = props.apiBase;
+  if (props.lang) script.dataset.lang = props.lang;
   if (props.userEmail) script.dataset.userEmail = props.userEmail;
   document.body.appendChild(script);
 });
@@ -230,7 +252,7 @@ onMounted(() => {
 
 ## 已登录用户邮箱预填
 
-如果产品自己有登录态，把当前用户邮箱传进 `data-user-email`（见上面 React/Vue 示例），用户提交反馈/投票时就不用手动填邮箱了。不传就是匿名用户手动填，两种方式共存不冲突。**这不是身份校验**，只是省一次输入，后端不会验证这个邮箱是否真的属于当前登录用户。
+如果产品自己有登录态，可以把当前用户邮箱传进 `data-user-email`（见上面 React/Vue 示例），这样用户提交反馈时就不用重复填写。不传时，用户可以自行填写。**这不是身份校验**，只会预填邮箱；后端不会验证邮箱是否属于当前登录用户。
 
 ## 公开面板地址
 
@@ -240,11 +262,13 @@ onMounted(() => {
 https://<slug>.board.你的域名.com
 ```
 
+当前 staging 环境的 AI Agent Quota Dashboard 面板地址是 `https://aiqd.board.fp-staging.tonimakes.com/board`。可嵌入的 widget 从 `https://fp-staging.tonimakes.com/widget.js` 提供；嵌入其他网站时将 `data-api-base` 设为 `https://fp-staging.tonimakes.com`。
+
 可以直接把这个链接放进产品的"意见反馈"入口、更新日志页脚等位置，不需要额外部署。
 
 ## 关于跨域
 
-widget 请求 API 是跨域请求（宿主域名 ≠ FeedbackPort 域名），后端已对提交反馈/投票这两个端点开放 CORS，宿主域名不需要额外配置。如果用了 Cloudflare Turnstile，注意在 Turnstile 控制台把宿主产品的域名加进允许列表，否则验证会失败（这是最常见的接入踩坑点）。
+宿主与 FeedbackPort 使用不同域名时，widget 请求属于跨域请求。提交反馈和投票端点会响应 `OPTIONS` 预检请求，并在 `POST` 响应中包含 CORS 响应头。请在 Cloudflare Turnstile 的允许主机名列表中加入宿主产品域名，否则验证会失败。
 
 ## 排查清单
 

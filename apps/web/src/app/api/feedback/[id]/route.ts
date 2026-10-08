@@ -2,15 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 /**
- * GET /api/feedback/:id —— 反馈详情 + 关联回复，见 docs/API.md。
- * id 是不可预测的 UUID，读取单条不做租户强校验（跟 docs/API.md 保持一致）。
+ * GET /api/feedback/:id: feedback detail plus its replies; see docs/API.md.
+ * The id is an unguessable UUID, so reading a single item does no strict tenant check (consistent with docs/API.md).
  */
 export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
 
   const { data: feedback, error: feedbackError } = await getSupabaseAdmin()
     .from("feedback")
-    .select("id, product_id, title, body, status, submitter_email, created_at, updated_at")
+    .select("id, product_id, title, body, status, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
 

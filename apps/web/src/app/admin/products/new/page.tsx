@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { useLanguage } from "@/components/language-provider";
 
 export default function NewProductPage() {
+  const { copy } = useLanguage();
   const router = useRouter();
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
@@ -25,8 +27,7 @@ export default function NewProductPage() {
     setSubmitting(false);
 
     if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(res.status === 409 ? "这个 slug 已经被用过了" : (data?.error ?? "创建失败"));
+      setError(res.status === 409 ? copy.slugExists : copy.createFailed);
       return;
     }
 
@@ -34,30 +35,33 @@ export default function NewProductPage() {
   }
 
   return (
-    <main className="shell max-w-lg">
-      <h1>新增产品</h1>
+    <main className="shell page-enter max-w-lg">
+      <p className="eyebrow mb-2">{copy.workspace}</p>
+      <h1 className="text-3xl">{copy.addProductTitle}</h1>
+      <p className="mt-2 text-sm text-slate-500">{copy.addProductHelper}</p>
       <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-4">
         <div>
           <label className="field-label" htmlFor="product-slug">
-            Slug
+            {copy.boardUrlSlug}
           </label>
           <input
             id="product-slug"
             required
-            placeholder="如 cardwhisper，只能小写字母数字连字符"
+            placeholder={copy.slugPlaceholder}
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
             className="input"
           />
+          <p className="mt-1.5 text-xs text-slate-500">{copy.slugHelper}</p>
         </div>
         <div>
           <label className="field-label" htmlFor="product-name">
-            产品名称
+            {copy.productName}
           </label>
           <input
             id="product-name"
             required
-            placeholder="产品名称"
+            placeholder={copy.productName}
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="input"
@@ -65,7 +69,7 @@ export default function NewProductPage() {
         </div>
         <div>
           <label className="field-label" htmlFor="product-color">
-            品牌色
+            {copy.brandColor}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -80,7 +84,7 @@ export default function NewProductPage() {
         </div>
         {error && <p className="alert-error">{error}</p>}
         <button type="submit" disabled={submitting} className="btn-primary self-start">
-          {submitting ? "创建中…" : "创建"}
+          {submitting ? copy.creating : copy.createProduct}
         </button>
       </form>
     </main>
