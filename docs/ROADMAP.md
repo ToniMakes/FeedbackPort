@@ -8,6 +8,7 @@
 - [x] Public endpoints: submit feedback / vote / list / detail (`apps/web/src/app/api/feedback/**`) — the API layer is wired to real Supabase reads/writes
 - [x] Public board UI: list/submit/vote at `/board`, detail + replies at `/board/[id]` (`apps/web/src/app/board/**`)
 - [x] Admin console: cross-product unified inbox, single-product filter, status changes, writing replies (see the unified-inbox design in ARCHITECTURE.md), plus Supabase Auth magic-link login (`apps/web/src/app/admin/**`, `apps/web/src/app/login`)
+- [x] Frontend visual refresh: flat, restrained design system across the public board, admin console, login, home page, and embed widget; includes reduced-motion support (`docs/FRONTEND_REDESIGN_PLAN.md`)
 - [x] Three-layer anti-abuse: honeypot + Turnstile + Redis rate limiting (`apps/web/src/lib/{turnstile,rate-limit,request-ip}.ts`, already wired into the submit-feedback and vote endpoints)
 - [x] Event-driven email notifications: `notify-submitter` queries Supabase and calls Resend for real (`supabase/functions/notify-submitter/index.ts`). Deployed and verified end-to-end against a real project — an admin reply now actually lands in the submitter's inbox. Two things this needed that don't ship as code, see the deployment note in API.md: the Database Webhook itself (table-specific, has to be created by hand per project) and turning off the function's "Verify JWT with legacy secret" toggle in favor of a shared-secret header (`WEBHOOK_SECRET` / `x-webhook-secret`), since the new-style `sb_secret_` keys aren't legacy-secret-signed JWTs
 - [x] Real Turnstile token acquisition in both the widget (Shadow DOM, `packages/widget/src/turnstile.ts`) and the board (`apps/web/src/lib/turnstile-client.ts`) — the vote flow was reworked from `window.prompt` into an inline form (`apps/web/src/app/board/vote-button.tsx`) since Turnstile needs a persistent DOM container to render into. Requires `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `data-turnstile-site-key` — Cloudflare's public test key `1x00000000000000000000AA` works for local dev
@@ -18,12 +19,12 @@
 
 ## Phase 1: open-source release prep
 
-- [ ] README (with an architecture diagram, demo screenshots/GIF)
-- [ ] Deployment guide: one-click Vercel + Supabase deploy / `docker-compose` as a fallback
+- [x] README with an architecture diagram and screenshots (`docs/images/`) captured from the seeded local instance; no GIF
+- [x] Deployment guide covering local, Docker (`docker-compose.yml`), and Vercel + Supabase (`docs/DEPLOYMENT.md`); a one-click deploy button is not provided
 - [x] GitHub Actions CI (lint + typecheck + test)
-- [ ] Example tenant seed data (sanitized, no real product info)
+- [x] Example tenant seed data: fictional `demo` product (`supabase/seed.sql`, runs on `supabase db reset`)
 - [x] MIT LICENSE file
-- [ ] A public demo deployment (read-only, or with data reset on a schedule)
+- [ ] A public demo deployment: the scheduled reset is in place (`.github/workflows/demo-reset.yml`, inert until a `DEMO_DATABASE_URL` secret is set); the demo environment itself is not deployed yet
 
 **Acceptance criteria**: a stranger clones the repo and, following the README, has a local instance running within 15 minutes.
 
@@ -60,6 +61,7 @@
 - [x] 公开端点：提交反馈 / 投票 / 列表 / 详情（`apps/web/src/app/api/feedback/**`），API 层已接 Supabase 真实读写
 - [x] 公开面板 UI：`/board` 列表+提交+投票，`/board/[id]` 详情+回复（`apps/web/src/app/board/**`）
 - [x] 管理后台：跨产品统一收件箱、单产品筛选、改状态、写回复（见 ARCHITECTURE.md 跨产品收件箱设计），含 Supabase Auth magic link 登录（`apps/web/src/app/admin/**`、`apps/web/src/app/login`）
+- [x] 前端视觉改造：公开面板、管理后台、登录页、首页和嵌入组件统一为克制的平面风格，并支持减少动态效果（见 `docs/FRONTEND_REDESIGN_PLAN.md`）
 - [x] 防刷三层：蜜罐 + Turnstile + Redis 频率限制（`apps/web/src/lib/{turnstile,rate-limit,request-ip}.ts`，已接进提交反馈/投票两个端点）
 - [x] 事件驱动邮件通知：`notify-submitter` 真的查 Supabase、调 Resend 发信了（`supabase/functions/notify-submitter/index.ts`），已经在真实项目上端到端验证过——管理员写回复，提交者真的收到了邮件。有两件事代码里写不了，见 API.md 部署说明：Database Webhook 本身（跟具体表绑定，每个项目要手动建）、以及把函数的 "Verify JWT with legacy secret" 开关关掉、改用共享密钥校验（`WEBHOOK_SECRET` / `x-webhook-secret` 请求头）——因为新版 `sb_secret_` 密钥不是 legacy secret 签的 JWT，满足不了那个开关的校验
 - [x] widget（Shadow DOM，`packages/widget/src/turnstile.ts`）和 board（`apps/web/src/lib/turnstile-client.ts`）都接了真实 Turnstile——投票流程也从 `window.prompt` 改成了内联表单（`apps/web/src/app/board/vote-button.tsx`），因为 Turnstile 需要一个常驻的 DOM 容器才能渲染。需要 `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `data-turnstile-site-key`，本地开发可以用 Cloudflare 官方测试 key `1x00000000000000000000AA`
@@ -70,12 +72,12 @@
 
 ## Phase 1：开源发布准备
 
-- [ ] README（含架构图、Demo 截图/GIF）
-- [ ] 部署指引：Vercel + Supabase 一键部署 / `docker-compose` 备选
+- [x] README 含架构图和截图（`docs/images/`，取自种子数据的本地实例）；没有 GIF
+- [x] 部署指南，覆盖本地、Docker（`docker-compose.yml`）和 Vercel + Supabase（`docs/DEPLOYMENT.md`）；不提供一键部署按钮
 - [x] GitHub Actions CI（lint + typecheck + test）
-- [ ] 示例租户 seed 数据（脱敏，不含真实产品信息）
+- [x] 示例租户种子数据：虚构的 `demo` 产品（`supabase/seed.sql`，`supabase db reset` 时自动执行）
 - [x] MIT LICENSE 文件
-- [ ] 公开 Demo 部署（只读或定期重置数据）
+- [ ] 公开 Demo 部署：定时重置已就绪（`.github/workflows/demo-reset.yml`，设置 `DEMO_DATABASE_URL` secret 前不会执行）；Demo 环境本身尚未部署
 
 **验收标准**：陌生人 clone 仓库后，跟着 README 能在 15 分钟内跑起一个本地实例。
 

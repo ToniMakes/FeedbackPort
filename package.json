@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "pnpm --filter @feedbackport/web dev",
+    "widget:publish": "pnpm --filter @feedbackport/widget build && node -e \"const f=require('fs');f.mkdirSync('apps/web/public',{recursive:true});f.copyFileSync('packages/widget/dist/widget.js','apps/web/public/widget.js')\"",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",

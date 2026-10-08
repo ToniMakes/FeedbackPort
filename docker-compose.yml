@@ -1,0 +1,22 @@
+# Runs the FeedbackPort web app from the repo's Dockerfile.
+#
+#   cp .env.docker.example .env      # fill in your hosted Supabase / Turnstile / Upstash values
+#   docker compose up --build
+#
+# Supabase, Upstash, Turnstile and Resend stay hosted services; this file only runs the
+# Next.js app. NEXT_PUBLIC_* values are baked into the browser bundle at build time, so the
+# image is bound to one environment (see docs/decisions/0003-container-image.md).
+# Server-side secrets are passed at runtime via env_file and never enter an image layer.
+services:
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:?set NEXT_PUBLIC_SUPABASE_URL in .env}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:?set NEXT_PUBLIC_SUPABASE_ANON_KEY in .env}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:?set NEXT_PUBLIC_TURNSTILE_SITE_KEY in .env}
+    image: feedbackport-web
+    env_file: .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
