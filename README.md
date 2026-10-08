@@ -11,6 +11,12 @@ FeedbackPort is an open-source feedback hub for indie developers and small teams
 - Review and reply to feedback by product or across your portfolio.
 - Show users the current status of each idea on the public board.
 
+## Screenshots
+
+| Public board | Admin console | Embedded widget |
+|---|---|---|
+| ![Public board with search, sort and status filters](docs/images/board.png) | ![Admin inbox for one product with status and reply controls](docs/images/admin-inbox.png) | ![Feedback widget open on a host page](docs/images/widget.png) |
+
 ## Add the widget
 
 After deploying FeedbackPort and building the widget bundle, add this script to your product page. Replace the example URLs and key with your deployment values. `data-api-base` is optional when the widget and API share an origin; set it when they are hosted separately.
@@ -112,6 +118,12 @@ FeedbackPort 是面向独立开发者和小团队的开源反馈工具。为每�
 - 通过轻量组件从网站收集想法，不依赖宿主页面的前端框架。
 - 按产品或跨产品查看反馈、更新状态并回复用户。
 - 在公开面板展示每条想法的当前状态。
+
+## 截图
+
+| 公开面板 | 管理后台 | 嵌入组件 |
+|---|---|---|
+| ![带搜索、排序和状态筛选的公开面板](docs/images/board.png) | ![单个产品的收件箱，含状态和回复操作](docs/images/admin-inbox.png) | ![展开在宿主页面上的反馈组件](docs/images/widget.png) |
 
 ## 接入嵌入组件
 

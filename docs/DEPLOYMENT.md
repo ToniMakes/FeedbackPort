@@ -18,7 +18,7 @@ pnpm install
 npx supabase start
 ```
 
-`supabase start` applies every migration in `supabase/migrations/` and then `supabase/seed.sql`, which creates a fictional product with the slug `demo` and a handful of ideas in every status. When it finishes it prints the API URL, the `anon key`, and the `service_role key`.
+`supabase start` applies every migration in `supabase/migrations/` and then `supabase/seed.sql`, which creates a fictional product with the slug `demo` and a handful of ideas in every status. When it finishes it prints the API URL and the keys. Use the legacy `ANON_KEY` and `SERVICE_ROLE_KEY` values (run `npx supabase status -o env` to print them again); the app's Supabase clients expect those JWT-style keys.
 
 Create `apps/web/.env.local` from `apps/web/.env.example`:
 
@@ -93,7 +93,7 @@ pnpm install
 npx supabase start
 ```
 
-`supabase start` 会应用 `supabase/migrations/` 下所有迁移，再执行 `supabase/seed.sql`：它会创建一个 slug 为 `demo` 的虚构产品，以及每种状态各有的若干想法。完成后会打印 API 地址、`anon key` 和 `service_role key`。
+`supabase start` 会应用 `supabase/migrations/` 下所有迁移，再执行 `supabase/seed.sql`：它会创建一个 slug 为 `demo` 的虚构产品，以及每种状态各有的若干想法。完成后会打印 API 地址和各种密钥。请使用旧式的 `ANON_KEY` 和 `SERVICE_ROLE_KEY`（可用 `npx supabase status -o env` 重新打印）。
 
 按 `apps/web/.env.example` 创建 `apps/web/.env.local`：
 

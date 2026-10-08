@@ -112,7 +112,7 @@ export function BoardList({ productSlug }: { productSlug: string }) {
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <span className="text-sm font-medium text-slate-500">
-                  {item.votes?.[0]?.count ?? 0} votes
+                  {item.votes?.[0]?.count ?? 0} {(item.votes?.[0]?.count ?? 0) === 1 ? copy.voteSingular : copy.votePlural}
                 </span>
                 <VoteButton productSlug={productSlug} feedbackId={item.id} onVoted={load} />
               </div>
