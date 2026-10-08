@@ -69,7 +69,12 @@ Supabase must be reachable at the same URL from the browser and from the contain
 
 ## Public demo
 
-A demo deployment is the same app with a demo-only Supabase project and `DEFAULT_TENANT_SLUG=demo`. Seed it once with `psql "$DEMO_DATABASE_URL" -f supabase/seed.sql`. To keep it clean, add the connection string as the `DEMO_DATABASE_URL` repository secret: `.github/workflows/demo-reset.yml` then re-runs the seed every day, replacing whatever visitors submitted. The seed only touches the `demo` product. Keep the notification webhook unconfigured on the demo database so seeded replies don't try to send email.
+The simplest public demo needs no extra infrastructure: add a fictional `demo` product to a deployment you already run, and visitors open `https://demo.board.your-domain.com/board`. The wildcard board domain from the production setup already routes it.
+
+1. Run `supabase/seed.sql` against that project once (paste it into the Supabase SQL editor, or `psql "$DATABASE_URL" -f supabase/seed.sql`). It only touches the product with slug `demo`, and it suspends the reply triggers while it runs, so the notification webhook never emails the sample addresses.
+2. To reset visitor submissions automatically, add the project's Postgres connection string as the `DEMO_DATABASE_URL` repository secret. `.github/workflows/demo-reset.yml` then re-runs the seed every day.
+
+If you would rather keep demo traffic away from real data, deploy a second copy with its own Supabase project and `DEFAULT_TENANT_SLUG=demo`, then point `DEMO_DATABASE_URL` at that project instead.
 
 ---
 
@@ -144,4 +149,9 @@ Supabase 必须能从浏览器和容器用同一个地址访问，所以 `NEXT_P
 
 ## 公开 Demo
 
-Demo 部署就是同一个应用，配一个仅供演示的 Supabase 项目，并设置 `DEFAULT_TENANT_SLUG=demo`。先用 `psql "$DEMO_DATABASE_URL" -f supabase/seed.sql` 导入一次数据。想让它保持干净，就把连接串存为仓库 secret `DEMO_DATABASE_URL`：`.github/workflows/demo-reset.yml` 会每天重新执行种子脚本，覆盖访客提交的内容。种子脚本只会改动 `demo` 产品。演示库上请不要配置通知 webhook，以免种子里的回复触发发信。
+最简单的公开 Demo 不需要额外基础设施：在你已有的部署里加一个虚构的 `demo` 产品，访客打开 `https://demo.board.你的域名.com/board` 即可，生产环境配置好的泛域名会直接路由过去。
+
+1. 对该项目执行一次 `supabase/seed.sql`（粘贴到 Supabase SQL 编辑器，或 `psql "$DATABASE_URL" -f supabase/seed.sql`）。它只会改动 slug 为 `demo` 的产品，并在执行期间暂停回复上的触发器，所以通知 webhook 不会给示例地址发邮件。
+2. 想自动清理访客提交的内容，就把该项目的 Postgres 连接串存为仓库 secret `DEMO_DATABASE_URL`，`.github/workflows/demo-reset.yml` 会每天重新执行种子脚本。
+
+如果想让 Demo 流量远离真实数据，可以另外部署一份，配独立的 Supabase 项目和 `DEFAULT_TENANT_SLUG=demo`，再让 `DEMO_DATABASE_URL` 指向那个项目。

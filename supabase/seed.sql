@@ -5,8 +5,13 @@
 -- and replies. The public demo deployment resets itself by running this file on a schedule
 -- (.github/workflows/demo-reset.yml). All addresses use the reserved example.com domain.
 --
--- Note: inserting admin replies fires the notify-submitter webhook if it is configured for
--- the project. Leave the webhook unconfigured on demo/local databases.
+-- Admin replies would normally fire the notify-submitter webhook. User triggers on `replies` are
+-- disabled for the duration of this transaction, so running the seed against a database that has the
+-- webhook configured (for example a demo tenant on a production project) never sends email.
+
+begin;
+
+alter table public.replies disable trigger user;
 
 do $$
 declare
@@ -69,3 +74,7 @@ begin
   values (fid, 'Thanks for the suggestion. We need to keep a paid tier to sustain the project, so we are not planning this.');
 end
 $$;
+
+alter table public.replies enable trigger user;
+
+commit;
