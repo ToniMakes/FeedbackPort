@@ -1,0 +1,25 @@
+name: Reset demo data
+
+# Resets the public demo tenant to supabase/seed.sql every day. Inert unless the
+# DEMO_DATABASE_URL repository secret (a Postgres connection string for the demo
+# database only) is set.
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  reset:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Re-seed demo tenant
+        env:
+          DEMO_DATABASE_URL: ${{ secrets.DEMO_DATABASE_URL }}
+        run: |
+          if [ -z "$DEMO_DATABASE_URL" ]; then
+            echo "DEMO_DATABASE_URL is not set; skipping"
+            exit 0
+          fi
+          psql "$DEMO_DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
