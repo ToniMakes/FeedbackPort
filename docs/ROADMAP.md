@@ -19,7 +19,7 @@
 
 ## Phase 1: open-source release prep
 
-- [x] README with an architecture diagram and screenshots (`docs/images/`) captured from the seeded local instance; no GIF
+- [x] README with an architecture diagram and screenshots (`docs/images/`) captured from the seeded local instance, plus a short demo GIF
 - [x] Deployment guide covering local, Docker (`docker-compose.yml`), and Vercel + Supabase (`docs/DEPLOYMENT.md`); a one-click deploy button is not provided
 - [x] GitHub Actions CI (lint + typecheck + test)
 - [x] Example tenant seed data: fictional `demo` product (`supabase/seed.sql`, runs on `supabase db reset`)
@@ -72,7 +72,7 @@
 
 ## Phase 1：开源发布准备
 
-- [x] README 含架构图和截图（`docs/images/`，取自种子数据的本地实例）；没有 GIF
+- [x] README 含架构图和截图（`docs/images/`，取自种子数据的本地实例），另有简短演示 GIF
 - [x] 部署指南，覆盖本地、Docker（`docker-compose.yml`）和 Vercel + Supabase（`docs/DEPLOYMENT.md`）；不提供一键部署按钮
 - [x] GitHub Actions CI（lint + typecheck + test）
 - [x] 示例租户种子数据：虚构的 `demo` 产品（`supabase/seed.sql`，`supabase db reset` 时自动执行）

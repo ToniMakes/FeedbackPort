@@ -13,6 +13,8 @@ FeedbackPort is an open-source feedback hub for indie developers and small teams
 
 ## Screenshots
 
+![Searching, filtering and submitting an idea on the public board](docs/images/demo.gif)
+
 | Public board | Admin console | Embedded widget |
 |---|---|---|
 | ![Public board with search, sort and status filters](docs/images/board.png) | ![Admin inbox for one product with status and reply controls](docs/images/admin-inbox.png) | ![Feedback widget open on a host page](docs/images/widget.png) |
@@ -120,6 +122,8 @@ FeedbackPort 是面向独立开发者和小团队的开源反馈工具。为每�
 - 在公开面板展示每条想法的当前状态。
 
 ## 截图
+
+![在公开面板搜索、筛选并提交想法](docs/images/demo.gif)
 
 | 公开面板 | 管理后台 | 嵌入组件 |
 |---|---|---|
