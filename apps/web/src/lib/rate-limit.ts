@@ -29,6 +29,11 @@ function getLimiter(kind: RateLimitKind): Ratelimit {
 
 /** Thresholds all come from RATE_LIMITS in @feedbackport/core; see the three-layer anti-abuse design in docs/ARCHITECTURE.md */
 export async function checkRateLimit(kind: RateLimitKind, identifier: string): Promise<boolean> {
+  // Local development without Upstash credentials: skip limiting instead of crashing.
+  // Production still fails closed (Redis.fromEnv throws when the variables are missing).
+  if (process.env.NODE_ENV !== "production" && !process.env.UPSTASH_REDIS_REST_URL) {
+    return true;
+  }
   const { success } = await getLimiter(kind).limit(identifier);
   return success;
 }

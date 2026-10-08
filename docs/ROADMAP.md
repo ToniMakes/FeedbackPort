@@ -19,12 +19,12 @@
 
 ## Phase 1: open-source release prep
 
-- [ ] README (with an architecture diagram, demo screenshots/GIF)
-- [ ] Deployment guide: one-click Vercel + Supabase deploy / `docker-compose` as a fallback
+- [ ] README: architecture diagram done; demo screenshots/GIF still to capture from a seeded instance
+- [x] Deployment guide covering local, Docker (`docker-compose.yml`), and Vercel + Supabase (`docs/DEPLOYMENT.md`); a one-click deploy button is not provided
 - [x] GitHub Actions CI (lint + typecheck + test)
-- [ ] Example tenant seed data (sanitized, no real product info)
+- [x] Example tenant seed data: fictional `demo` product (`supabase/seed.sql`, runs on `supabase db reset`)
 - [x] MIT LICENSE file
-- [ ] A public demo deployment (read-only, or with data reset on a schedule)
+- [ ] A public demo deployment: the scheduled reset is in place (`.github/workflows/demo-reset.yml`, inert until a `DEMO_DATABASE_URL` secret is set); the demo environment itself is not deployed yet
 
 **Acceptance criteria**: a stranger clones the repo and, following the README, has a local instance running within 15 minutes.
 
@@ -72,12 +72,12 @@
 
 ## Phase 1：开源发布准备
 
-- [ ] README（含架构图、Demo 截图/GIF）
-- [ ] 部署指引：Vercel + Supabase 一键部署 / `docker-compose` 备选
+- [ ] README：架构图已完成；Demo 截图/GIF 待用种子实例截取
+- [x] 部署指南，覆盖本地、Docker（`docker-compose.yml`）和 Vercel + Supabase（`docs/DEPLOYMENT.md`）；不提供一键部署按钮
 - [x] GitHub Actions CI（lint + typecheck + test）
-- [ ] 示例租户 seed 数据（脱敏，不含真实产品信息）
+- [x] 示例租户种子数据：虚构的 `demo` 产品（`supabase/seed.sql`，`supabase db reset` 时自动执行）
 - [x] MIT LICENSE 文件
-- [ ] 公开 Demo 部署（只读或定期重置数据）
+- [ ] 公开 Demo 部署：定时重置已就绪（`.github/workflows/demo-reset.yml`，设置 `DEMO_DATABASE_URL` secret 前不会执行）；Demo 环境本身尚未部署
 
 **验收标准**：陌生人 clone 仓库后，跟着 README 能在 15 分钟内跑起一个本地实例。
 

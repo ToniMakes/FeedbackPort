@@ -33,20 +33,38 @@ https://<product-slug>.board.<your-domain>
 
 See the [integration guide](docs/INTEGRATION.md) for React, Next.js, Vue, static-site, and board-link examples.
 
+## How it works
+
+~~~mermaid
+flowchart LR
+    Visitor[Visitor] --> Board[Public board<br/>slug.board.your-domain]
+    Visitor --> Widget[Embedded widget<br/>on your product]
+    Widget --> API[Next.js API]
+    Board --> API
+    Admin[You] --> Console[Admin console<br/>all products in one inbox]
+    Console --> API
+    API --> DB[(Supabase Postgres)]
+    API -.-> Guard[Turnstile + rate limit]
+    DB -- reply or status change --> Notify[Edge Function] --> Mail[Email to submitter and voters]
+~~~
+
+Each product gets its own board and widget; the admin console shows all of them together. Replying or changing a status only writes to the database; a webhook sends the email, so the write path never depends on email delivery. See the [architecture](docs/ARCHITECTURE.md) for details.
+
 ## Self-hosting
 
 FeedbackPort is designed to run on your infrastructure; it is not a hosted SaaS sign-up service. Production currently runs on Vercel, and an AWS ECS/Fargate staging environment is used for deployment verification. Your deployment needs Supabase for the database and admin authentication, Cloudflare Turnstile and Upstash Redis for abuse prevention, and optional Resend configuration for email notifications.
 
-Never put server-side credentials in client-side settings. See the [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API reference](docs/API.md), and [AWS staging guide](infra/terraform/README.md) for implementation and deployment details.
+The [deployment guide](docs/DEPLOYMENT.md) covers a local instance, Docker (`docker compose up`), and Vercel with hosted Supabase, plus how to run a self-resetting public demo. Never put server-side credentials in client-side settings. See the [architecture](docs/ARCHITECTURE.md), [data model](docs/DATA_MODEL.md), [API reference](docs/API.md), and [AWS staging guide](infra/terraform/README.md) for implementation details.
 
 ## Local development
 
 ~~~bash
 pnpm install
+npx supabase start    # local database, migrations, and demo seed data
 pnpm dev
 ~~~
 
-The web app runs at <http://localhost:3000>. Data-backed features require the environment variables in `apps/web/.env.example`, the Supabase migrations, and the notification function. See the [integration guide](docs/INTEGRATION.md) before embedding the widget.
+Add the keys printed by `supabase start` to `apps/web/.env.local` as described in the [deployment guide](docs/DEPLOYMENT.md#1-local-instance-about-15-minutes), then open <http://localhost:3000/board> to see the seeded demo product. See the [integration guide](docs/INTEGRATION.md) before embedding the widget.
 
 ## Technology
 
@@ -67,6 +85,7 @@ The web app runs at <http://localhost:3000>. Data-backed features require the en
 | Document | Description |
 |---|---|
 | [Integration guide](docs/INTEGRATION.md) | Add the widget or link a product to its board |
+| [Deployment guide](docs/DEPLOYMENT.md) | Run locally, with Docker, or on Vercel and Supabase; set up a demo |
 | [Architecture](docs/ARCHITECTURE.md) | Tenant routing, service boundaries, notifications, and security |
 | [Data model](docs/DATA_MODEL.md) | Database schema and Row Level Security policies |
 | [API reference](docs/API.md) | Public and admin endpoints, widget configuration, and notification events |
@@ -116,20 +135,38 @@ https://<产品-slug>.board.<你的域名>
 
 [接入指南](docs/INTEGRATION.md)包含 React、Next.js、Vue、静态网页接入以及直接链接面板的示例。
 
+## 工作原理
+
+~~~mermaid
+flowchart LR
+    Visitor[访客] --> Board[公开面板<br/>slug.board.你的域名]
+    Visitor --> Widget[嵌入组件<br/>在你的产品里]
+    Widget --> API[Next.js API]
+    Board --> API
+    Admin[你] --> Console[管理后台<br/>所有产品共用一个收件箱]
+    Console --> API
+    API --> DB[(Supabase Postgres)]
+    API -.-> Guard[Turnstile + 频率限制]
+    DB -- 回复或状态变更 --> Notify[Edge Function] --> Mail[邮件通知提交者和投票者]
+~~~
+
+每个产品有自己的面板和组件，管理后台把它们汇总在一起。回复或改状态只写数据库，邮件由 webhook 触发发送，所以写入路径不依赖邮件投递。细节见[架构文档](docs/ARCHITECTURE.md)。
+
 ## 自行部署
 
 FeedbackPort 面向自部署场景，并非注册即用的托管 SaaS。当前生产环境运行在 Vercel，AWS ECS/Fargate staging 环境用于验证部署。运行需要 Supabase 数据库和管理员认证、Cloudflare Turnstile 与 Upstash Redis 防刷；邮件通知还需要配置 Resend。
 
-请勿将服务端密钥放入前端配置。实现和部署细节见[架构文档](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[API 参考](docs/API.md)和[AWS staging 指南](infra/terraform/README.md)。
+[部署指南](docs/DEPLOYMENT.md)涵盖本地实例、Docker（`docker compose up`）、Vercel + 托管 Supabase，以及如何运行会自动重置的公开 Demo。请勿将服务端密钥放入前端配置。实现细节见[架构文档](docs/ARCHITECTURE.md)、[数据模型](docs/DATA_MODEL.md)、[API 参考](docs/API.md)和[AWS staging 指南](infra/terraform/README.md)。
 
 ## 本地开发
 
 ~~~bash
 pnpm install
+npx supabase start    # 本地数据库、迁移和演示种子数据
 pnpm dev
 ~~~
 
-Web 应用默认运行在 <http://localhost:3000>。数据功能需要按 `apps/web/.env.example` 配置环境变量、应用 Supabase migrations 并部署通知函数。嵌入 widget 前请先查看[接入指南](docs/INTEGRATION.md)。
+按[部署指南](docs/DEPLOYMENT.md)把 `supabase start` 输出的密钥写入 `apps/web/.env.local`，然后打开 <http://localhost:3000/board> 查看种子里的演示产品。嵌入 widget 前请先查看[接入指南](docs/INTEGRATION.md)。
 
 ## 技术栈
 
@@ -150,6 +187,7 @@ Web 应用默认运行在 <http://localhost:3000>。数据功能需要按 `apps/
 | 文档 | 内容 |
 |---|---|
 | [接入指南](docs/INTEGRATION.md) | 嵌入 widget 或将产品链接到反馈面板 |
+| [部署指南](docs/DEPLOYMENT.md) | 本地、Docker、Vercel + Supabase 运行方式及 Demo 配置 |
 | [架构文档](docs/ARCHITECTURE.md) | 租户路由、模块边界、通知与安全设计 |
 | [数据模型](docs/DATA_MODEL.md) | 数据库结构与 Row Level Security 策略 |
 | [API 参考](docs/API.md) | 公开和管理端点、widget 配置与通知事件 |
