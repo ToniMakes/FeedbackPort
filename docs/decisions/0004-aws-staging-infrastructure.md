@@ -6,7 +6,7 @@
 
 ## Context
 
-The Dockerized Next.js application needs a reproducible AWS staging environment while the existing Vercel production deployment remains untouched. Tenant routing requires hosts shaped as `<slug>.board.<domain>`, so the certificate must cover `*.board.fp-staging.tonimakes.com`. The staging environment must stay within a US$30/month target and be easy to remove when idle.
+The Dockerized Next.js application needs a reproducible AWS staging environment while the existing Vercel production deployment remains untouched. Tenant routing requires hosts shaped as `<slug>.board.<domain>`, so the certificate must cover `*.board.fp-staging.tonimakes.com`. The staging environment must stay within a US$5/month target and be easy to remove when idle.
 
 ## Decision
 
@@ -31,7 +31,7 @@ The Dockerized Next.js application needs a reproducible AWS staging environment 
 
 ## Cost and consequences
 
-US$30/month is a hard planning target, not a guaranteed ceiling. AWS currently lists US$0.50/month for a Route 53 hosted zone ([pricing](https://aws.amazon.com/route53/pricing/)) and US$0.005 per public IPv4 address-hour (US$3.65 per address over 730 hours; [VPC pricing](https://aws.amazon.com/vpc/pricing/)); an ALB additionally incurs hourly and LCU charges ([ELB pricing](https://aws.amazon.com/elasticloadbalancing/pricing/)), while Fargate compute varies by region and runtime ([Fargate pricing](https://aws.amazon.com/fargate/pricing/)). An always-on ALB plus a continuously running Fargate task may exceed the budget in Sydney after public addresses, logs, and data transfer. Runtime resources are therefore created only for active verification and destroyed when idle; persistent resources still have storage and hosted-zone costs. Before first apply, the owner must enter planned ALB hours, Fargate runtime, and traffic into the [AWS Pricing Calculator](https://calculator.aws/) for `ap-southeast-2`, then configure AWS Budgets at 50%, 80%, 100%, and forecasted 100%. The Sydney account-specific calculator estimate remains pending. Actual cost must later be reported from Cost Explorer, not inferred from this ADR.
+US$5/month is a planning target (lowered from US$30 on 2026-10-08; set by `monthly_budget_usd`), not a guaranteed ceiling. AWS currently lists US$0.50/month for a Route 53 hosted zone ([pricing](https://aws.amazon.com/route53/pricing/)) and US$0.005 per public IPv4 address-hour (US$3.65 per address over 730 hours; [VPC pricing](https://aws.amazon.com/vpc/pricing/)); an ALB additionally incurs hourly and LCU charges ([ELB pricing](https://aws.amazon.com/elasticloadbalancing/pricing/)), while Fargate compute varies by region and runtime ([Fargate pricing](https://aws.amazon.com/fargate/pricing/)). An always-on ALB plus a continuously running Fargate task may exceed the budget in Sydney after public addresses, logs, and data transfer. Runtime resources are therefore created only for active verification and destroyed when idle; persistent resources still have storage and hosted-zone costs. Before first apply, the owner must enter planned ALB hours, Fargate runtime, and traffic into the [AWS Pricing Calculator](https://calculator.aws/) for `ap-southeast-2`, then configure AWS Budgets at 50%, 80%, 100%, and forecasted 100%. The Sydney account-specific calculator estimate remains pending. Actual cost must later be reported from Cost Explorer, not inferred from this ADR.
 
 The persistent state bucket is encrypted and versioned. State access is sensitive and must be restricted. The bootstrap bucket uses local state for its first creation and is then used as the remote backend for the two staging stacks.
 
@@ -45,7 +45,7 @@ The persistent state bucket is encrypted and versioned. State access is sensitiv
 
 ## 背景
 
-容器化后的 Next.js 应用需要可复现的 AWS staging 环境，同时保持现有 Vercel 生产部署不变。租户路由要求主机名形如 `<slug>.board.<domain>`，因此证书必须覆盖 `*.board.fp-staging.tonimakes.com`。staging 目标预算为每月 US$30，并且闲置时要容易销毁。
+容器化后的 Next.js 应用需要可复现的 AWS staging 环境，同时保持现有 Vercel 生产部署不变。租户路由要求主机名形如 `<slug>.board.<domain>`，因此证书必须覆盖 `*.board.fp-staging.tonimakes.com`。staging 目标预算为每月 US$5，并且闲置时要容易销毁。
 
 ## 决策
 
@@ -70,6 +70,6 @@ The persistent state bucket is encrypted and versioned. State access is sensitiv
 
 ## 成本与影响
 
-US$30/月是规划目标，不是费用保证。AWS 当前列出的 Route 53 托管区价格是 US$0.50/月（[价格](https://aws.amazon.com/route53/pricing/)），公有 IPv4 地址为 US$0.005/地址小时（按 730 小时计算，每个地址 US$3.65；[VPC 价格](https://aws.amazon.com/vpc/pricing/)）；ALB 还会产生小时与 LCU 费用（[ELB 价格](https://aws.amazon.com/elasticloadbalancing/pricing/)），Fargate 计算费用则随区域和运行时长变化（[Fargate 价格](https://aws.amazon.com/fargate/pricing/)）。悉尼区域常驻 ALB 加持续运行的 Fargate 任务，叠加公有地址、日志与流量后可能超过预算。因此仅在验证期间创建 runtime 资源，闲置后销毁；常驻层仍会有存储和托管区费用。首次 apply 前，所有者需在 [AWS Pricing Calculator](https://calculator.aws/) 选择 `ap-southeast-2` 并填入 ALB 小时、Fargate 时长和流量，随后配置 50%、80%、100% 及预测 100% 的 AWS Budgets 告警。悉尼的账号级估算仍待完成。后续实际成本应从 Cost Explorer 报告，不能从本 ADR 推断。
+US$5/月是规划目标（2026-10-08 起由 US$30 下调，由 `monthly_budget_usd` 设置），不是费用保证。AWS 当前列出的 Route 53 托管区价格是 US$0.50/月（[价格](https://aws.amazon.com/route53/pricing/)），公有 IPv4 地址为 US$0.005/地址小时（按 730 小时计算，每个地址 US$3.65；[VPC 价格](https://aws.amazon.com/vpc/pricing/)）；ALB 还会产生小时与 LCU 费用（[ELB 价格](https://aws.amazon.com/elasticloadbalancing/pricing/)），Fargate 计算费用则随区域和运行时长变化（[Fargate 价格](https://aws.amazon.com/fargate/pricing/)）。悉尼区域常驻 ALB 加持续运行的 Fargate 任务，叠加公有地址、日志与流量后可能超过预算。因此仅在验证期间创建 runtime 资源，闲置后销毁；常驻层仍会有存储和托管区费用。首次 apply 前，所有者需在 [AWS Pricing Calculator](https://calculator.aws/) 选择 `ap-southeast-2` 并填入 ALB 小时、Fargate 时长和流量，随后配置 50%、80%、100% 及预测 100% 的 AWS Budgets 告警。悉尼的账号级估算仍待完成。后续实际成本应从 Cost Explorer 报告，不能从本 ADR 推断。
 
 常驻状态 bucket 开启加密与版本控制，状态访问必须受限。bootstrap bucket 首次创建时使用本地状态，之后作为两个 staging 栈的远端 backend。

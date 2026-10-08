@@ -186,9 +186,9 @@ resource "aws_iam_role_policy" "github_ecr_push" {
 resource "aws_budgets_budget" "monthly" {
   provider     = aws.billing
   count        = var.budget_notification_email == "" ? 0 : 1
-  name         = "feedbackport-monthly-30-usd"
+  name         = "feedbackport-monthly-budget"
   budget_type  = "COST"
-  limit_amount = "30"
+  limit_amount = tostring(var.monthly_budget_usd)
   limit_unit   = "USD"
   time_unit    = "MONTHLY"
 

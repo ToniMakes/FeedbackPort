@@ -38,3 +38,10 @@ variable "budget_notification_email" {
   description = "Owner email for AWS Budget notifications. Set this in ignored terraform.tfvars; never commit personal contact details."
   default     = ""
 }
+
+variable "monthly_budget_usd" {
+  type        = number
+  description = "Monthly AWS Budget limit in USD. Alerts fire at 50%, 80% and 100% of actual spend and at 100% of forecast; this is monitoring, not a spending cap."
+  default     = 5
+}
+
