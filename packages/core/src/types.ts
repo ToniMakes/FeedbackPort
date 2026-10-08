@@ -1,8 +1,8 @@
 /**
- * 领域类型定义。
+ * Domain type definitions.
  *
- * 本文件不依赖任何 Node.js 专属 API，因为它同时被 apps/web（Next.js）
- * 和 supabase/functions（Deno Edge Function）引用，见 docs/decisions/0002-tech-stack.md。
+ * This file doesn't depend on any Node.js-only API, because it is imported by both apps/web (Next.js)
+ * and supabase/functions (Deno Edge Functions); see docs/decisions/0002-tech-stack.md.
  */
 
 export const FEEDBACK_STATUSES = [

@@ -7,30 +7,30 @@ function makeRequest(headers: Record<string, string>): NextRequest {
 }
 
 describe("getClientIp", () => {
-  it("取 x-forwarded-for 的第一个地址", () => {
+  it("takes the first address from x-forwarded-for", () => {
     const ip = getClientIp(makeRequest({ "x-forwarded-for": "1.2.3.4, 5.6.7.8" }));
     expect(ip).toBe("1.2.3.4");
   });
 
-  it("没有 x-forwarded-for 时退回 x-real-ip", () => {
+  it("falls back to x-real-ip when x-forwarded-for is missing", () => {
     const ip = getClientIp(makeRequest({ "x-real-ip": "9.8.7.6" }));
     expect(ip).toBe("9.8.7.6");
   });
 
-  it("两者都没有时返回 unknown", () => {
+  it("returns unknown when neither is present", () => {
     const ip = getClientIp(makeRequest({}));
     expect(ip).toBe("unknown");
   });
 });
 
 describe("hashIp", () => {
-  it("相同输入产生相同哈希", async () => {
+  it("hashes the same input to the same value", async () => {
     const a = await hashIp("1.2.3.4");
     const b = await hashIp("1.2.3.4");
     expect(a).toBe(b);
   });
 
-  it("不同输入产生不同哈希，且不直接包含原始 IP", async () => {
+  it("hashes different inputs differently and never contains the raw IP", async () => {
     const a = await hashIp("1.2.3.4");
     const b = await hashIp("4.3.2.1");
     expect(a).not.toBe(b);

@@ -1,6 +1,6 @@
--- 初始表结构 + RLS，对应 docs/DATA_MODEL.md
+-- Initial schema + RLS; see docs/DATA_MODEL.md
 create extension if not exists "uuid-ossp";
-create extension if not exists vector; -- 预留 pgvector，docs/ROADMAP.md Phase 3 才启用
+create extension if not exists vector; -- reserved for pgvector; not enabled until docs/ROADMAP.md Phase 3
 
 create table products (
   id uuid primary key default gen_random_uuid(),
@@ -44,7 +44,7 @@ create index idx_feedback_product_status on feedback(product_id, status);
 create index idx_votes_feedback on votes(feedback_id);
 create index idx_replies_feedback on replies(feedback_id);
 
--- Row Level Security：匿名角色只能读 + 受限插入，改状态/写管理员回复只能走 service-role
+-- Row Level Security: the anonymous role can only read and make restricted inserts; status changes and admin replies go through service-role only
 alter table feedback enable row level security;
 alter table votes enable row level security;
 alter table replies enable row level security;
@@ -64,7 +64,7 @@ create policy "anon can vote" on votes
 create policy "anon can read replies" on replies
   for select using (true);
 
--- products 表：匿名可读（board/widget 需要按 slug 查 product_id），写入只能走 service-role
+-- products table: anonymous-readable (board/widget need to look up product_id by slug); writes go through service-role only
 alter table products enable row level security;
 
 create policy "anon can read products" on products

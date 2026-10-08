@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { defineConfig } from "vite";
 
-// 打包成单文件 IIFE，任意宿主页面一个 <script> 标签即可用，见 docs/INTEGRATION.md
+// Bundle into a single IIFE so any host page can use it with one <script> tag; see docs/INTEGRATION.md
 export default defineConfig({
   build: {
     lib: {
