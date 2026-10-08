@@ -11,10 +11,10 @@ interface FeedbackAggregateRow {
 }
 
 /**
- * GET /api/admin/products —— 产品总览卡片列表用，见管理后台首页改版
- * （产品优先导航：先选产品，再进它的反馈列表）。
- * 一次查 products，一次查 feedback 的 (product_id, status, title, created_at)，
- * 在内存里按 product_id 聚合出总数/待处理数/最新一条，避免每个产品单独发一次查询。
+ * GET /api/admin/products: feeds the product overview cards (see the admin home redesign:
+ * product-first navigation, pick a product, then open its feedback list).
+ * One query for products and one for feedback (product_id, status, title, created_at),
+ * aggregated in memory by product_id into total / pending / latest, so there isn't one query per product.
  */
 export async function GET() {
   const { user, response } = await requireAdmin();
@@ -45,7 +45,7 @@ export async function GET() {
     const stat = statsByProduct.get(row.product_id) ?? { total: 0, open: 0, latest: null };
     stat.total += 1;
     if (row.status === "open") stat.open += 1;
-    // feedbackRows 已按 created_at desc 排序，每个 product_id 第一次出现即最新一条
+    // feedbackRows is already sorted by created_at desc, so the first time a product_id appears is its latest item
     if (!stat.latest) stat.latest = { title: row.title, createdAt: row.created_at };
     statsByProduct.set(row.product_id, stat);
   }
@@ -66,7 +66,7 @@ export async function GET() {
   return NextResponse.json({ items });
 }
 
-/** POST /api/admin/products —— 新增产品，见 docs/INTEGRATION.md「前提：先注册产品」 */
+/** POST /api/admin/products: create a product; see "Prerequisite: register the product first" in docs/INTEGRATION.md */
 export async function POST(request: NextRequest) {
   const { user, response } = await requireAdmin();
   if (!user) return response;
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    // 23505 = unique_violation，slug 已存在
+    // 23505 = unique_violation, the slug already exists
     if (error.code === "23505") {
       return NextResponse.json({ error: "slug already exists" }, { status: 409 });
     }

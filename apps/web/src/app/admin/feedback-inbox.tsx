@@ -4,6 +4,7 @@ import { FEEDBACK_STATUSES } from "@feedbackport/core";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { statusLabel } from "@/lib/status";
+import { useLanguage } from "@/components/language-provider";
 
 interface FeedbackItem {
   id: string;
@@ -15,15 +16,16 @@ interface FeedbackItem {
 }
 
 /**
- * 反馈列表 + 改状态 + 写回复，被两处复用：
- * - 不传 productSlug：/admin/all 的跨产品全部反馈（见 docs/ARCHITECTURE.md「跨产品统一收件箱」）
- * - 传 productSlug：/admin/products/[slug] 的单产品视图，产品已经从 URL 确定，不需要再给筛选框
+ * Feedback list + status changes + replies, reused in two places:
+ * - No productSlug: the all-products feed at /admin/all (see docs/ARCHITECTURE.md, "Cross-product unified inbox")
+ * - With productSlug: the single-product view at /admin/products/[slug]; the product is already set by the URL, so no filter box is needed
  */
 export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
   const [items, setItems] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [productFilter, setProductFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const { locale, copy } = useLanguage();
 
   const effectiveProduct = productSlug ?? productFilter;
 
@@ -65,35 +67,37 @@ export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row">
         {!productSlug && (
           <input
-            placeholder="按 product slug 筛选（留空 = 全部产品）"
+            aria-label={copy.filterProduct}
+            placeholder={locale === "zh" ? `${copy.productSlug}（留空显示全部）` : copy.productSlug}
             value={productFilter}
             onChange={(event) => setProductFilter(event.target.value)}
             className="input sm:max-w-xs"
           />
         )}
         <select
+          aria-label={copy.filterStatus}
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
           className="select sm:w-auto"
         >
-          <option value="">全部状态</option>
+          <option value="">{copy.allStatuses}</option>
           {FEEDBACK_STATUSES.map((status) => (
             <option key={status} value={status}>
-              {statusLabel(status)}
+              {statusLabel(status, locale)}
             </option>
           ))}
         </select>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
+        <p className="py-8 text-center text-sm text-slate-400">{copy.loading}</p>
       ) : items.length === 0 ? (
-        <p className="card mt-6 text-center text-sm text-slate-500 dark:text-slate-400">没有匹配的反馈。</p>
+        <p className="mt-8 border-y border-slate-200 py-10 text-center text-sm text-slate-500">{copy.noFeedback}</p>
       ) : (
-        <ul className="mt-6 flex flex-col gap-3">
+        <ul className="mt-6 flex flex-col">
           {items.map((item) => (
             <FeedbackRow key={item.id} item={item} onStatusChange={updateStatus} onReply={submitReply} />
           ))}
@@ -113,37 +117,40 @@ function FeedbackRow({
   onReply: (id: string, body: string) => void;
 }) {
   const [replyBody, setReplyBody] = useState("");
+  const { locale, copy } = useLanguage();
 
   return (
-    <li className="card">
+    <li className="admin-feedback-row">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">{item.submitter_email}</p>
+          <p className="mt-1 text-xs text-slate-500">{item.submitter_email} · {new Date(item.created_at).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-AU")}</p>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={item.status} />
           <select
+            aria-label={`${copy.changeStatus} “${item.title}”`}
             value={item.status}
             onChange={(event) => onStatusChange(item.id, event.target.value)}
             className="select w-auto py-1.5 text-xs"
           >
             {FEEDBACK_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {statusLabel(status)}
+                {statusLabel(status, locale)}
               </option>
             ))}
           </select>
         </div>
       </div>
 
-      {item.body && <p className="mt-3 whitespace-pre-wrap text-sm text-slate-600 dark:text-slate-300">{item.body}</p>}
+      {item.body && <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-600">{item.body}</p>}
 
-      <div className="mt-4 flex gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+      <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row">
         <textarea
+          aria-label={`${copy.reply}: “${item.title}”`}
           value={replyBody}
           onChange={(event) => setReplyBody(event.target.value)}
-          placeholder="写回复…"
+          placeholder={copy.writeReply}
           className="textarea min-h-16 flex-1"
         />
         <button
@@ -152,9 +159,9 @@ function FeedbackRow({
             onReply(item.id, replyBody);
             setReplyBody("");
           }}
-          className="btn-primary self-end"
+          className="btn-primary self-end sm:self-end"
         >
-          回复
+          {copy.reply}
         </button>
       </div>
     </li>

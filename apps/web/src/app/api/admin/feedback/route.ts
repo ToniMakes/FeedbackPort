@@ -5,9 +5,9 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getProductBySlug } from "@/lib/tenant";
 
 /**
- * GET /api/admin/feedback?product=&status= —— 跨产品统一收件箱，见
- * docs/ARCHITECTURE.md「跨产品统一收件箱」。product 留空 = 全部产品聚合，
- * 这是跟公开端点 GET /api/feedback 的关键差异（公开端点强制单租户过滤）。
+ * GET /api/admin/feedback?product=&status=: the cross-product unified inbox; see
+ * docs/ARCHITECTURE.md, "Cross-product unified inbox". An empty product means all products aggregated,
+ * the key difference from the public GET /api/feedback (which forces single-tenant filtering).
  */
 export async function GET(request: NextRequest) {
   const { user, response } = await requireAdmin();
