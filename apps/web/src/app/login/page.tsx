@@ -2,12 +2,14 @@
 
 import { useState, type FormEvent } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useLanguage } from "@/components/language-provider";
 
 /**
  * 管理后台登录页，故意放在 /login 而不是 /admin/login——如果放进 app/admin/ 目录，
  * 会被 admin/layout.tsx 的登录态检查连带保护，导致未登录时重定向到自己，死循环。
  */
 export default function LoginPage() {
+  const { copy } = useLanguage();
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
@@ -35,7 +37,7 @@ export default function LoginPage() {
         <div className="shell max-w-sm text-center">
           <div className="card page-enter">
             <p className="text-sm leading-6 text-slate-700">
-              A sign-in link was sent to <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>. Open it to continue.
+              {copy.signInSent} <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>{copy.signInSentSuffix}
             </p>
           </div>
         </div>
@@ -47,28 +49,28 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center">
       <div className="shell max-w-sm">
         <p className="eyebrow mb-3 text-center">FeedbackPort</p>
-        <h1 className="text-center">Admin sign in</h1>
-        <p className="mt-2 text-center text-sm text-slate-500">Get a one-time sign-in link at your administrator email address.</p>
+        <h1 className="text-center">{copy.adminSignIn}</h1>
+        <p className="mt-2 text-center text-sm text-slate-500">{copy.signInHelper}</p>
         <form onSubmit={handleSubmit} className="card page-enter mt-6 flex flex-col gap-4">
           <div>
             <label className="field-label" htmlFor="login-email">
-              Email
+              {copy.emailLabel}
             </label>
             <input
               id="login-email"
               type="email"
               required
-              placeholder="you@example.com"
+              placeholder={copy.emailPlaceholder}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="input"
             />
           </div>
           {status === "error" && (
-            <p className="alert-error">Could not send the link. Make sure this email is set up as an administrator in the Supabase project.</p>
+            <p className="alert-error">{copy.signInFailed}</p>
           )}
           <button type="submit" disabled={status === "sending"} className="btn-primary">
-            {status === "sending" ? "Sending…" : "Send sign-in link"}
+            {status === "sending" ? copy.sending : copy.sendSignInLink}
           </button>
         </form>
       </div>

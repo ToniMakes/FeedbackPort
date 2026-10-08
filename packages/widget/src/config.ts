@@ -6,6 +6,7 @@ export interface WidgetConfig {
   userEmail?: string;
   apiBase: string;
   turnstileSiteKey: string;
+  locale: "en" | "zh";
 }
 
 export class WidgetConfigError extends Error {}
@@ -30,11 +31,16 @@ export function readConfig(script: HTMLOrSVGScriptElement | null): WidgetConfig 
   const scriptElement = script as HTMLScriptElement;
   const configuredApiBase = scriptElement.dataset.apiBase?.trim();
   const scriptOrigin = new URL(scriptElement.src || window.location.href, window.location.href).origin;
+  const configuredLocale = scriptElement.dataset.lang?.trim().toLowerCase();
+  const locale: "en" | "zh" = configuredLocale === "zh" || configuredLocale === "en"
+    ? configuredLocale
+    : navigator.language.toLowerCase().startsWith("zh") ? "zh" : "en";
 
   return {
     productSlug,
     userEmail: scriptElement.dataset.userEmail || undefined,
     apiBase: (configuredApiBase || (scriptOrigin === "null" ? "" : scriptOrigin)).replace(/\/$/, ""),
     turnstileSiteKey,
+    locale,
   };
 }

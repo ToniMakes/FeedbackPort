@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
+import { useLanguage } from "@/components/language-provider";
 
 export default function NewProductPage() {
+  const { copy } = useLanguage();
   const router = useRouter();
   const [slug, setSlug] = useState("");
   const [name, setName] = useState("");
@@ -25,8 +27,7 @@ export default function NewProductPage() {
     setSubmitting(false);
 
     if (!res.ok) {
-      const data = await res.json().catch(() => null);
-      setError(res.status === 409 ? "That slug is already in use." : (data?.error ?? "Could not create product."));
+      setError(res.status === 409 ? copy.slugExists : copy.createFailed);
       return;
     }
 
@@ -35,32 +36,32 @@ export default function NewProductPage() {
 
   return (
     <main className="shell page-enter max-w-lg">
-      <p className="eyebrow mb-2">Workspace</p>
-      <h1 className="text-3xl">Add a product</h1>
-      <p className="mt-2 text-sm text-slate-500">Create a dedicated feedback board for a product.</p>
+      <p className="eyebrow mb-2">{copy.workspace}</p>
+      <h1 className="text-3xl">{copy.addProductTitle}</h1>
+      <p className="mt-2 text-sm text-slate-500">{copy.addProductHelper}</p>
       <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-4">
         <div>
           <label className="field-label" htmlFor="product-slug">
-            Product slug
+            {copy.boardUrlSlug}
           </label>
           <input
             id="product-slug"
             required
-            placeholder="e.g. cardwhisper"
+            placeholder={copy.slugPlaceholder}
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
             className="input"
           />
-          <p className="mt-1.5 text-xs text-slate-500">Used in the public board URL. Use lowercase letters, numbers, and hyphens.</p>
+          <p className="mt-1.5 text-xs text-slate-500">{copy.slugHelper}</p>
         </div>
         <div>
           <label className="field-label" htmlFor="product-name">
-            Product name
+            {copy.productName}
           </label>
           <input
             id="product-name"
             required
-            placeholder="Product name"
+            placeholder={copy.productName}
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="input"
@@ -68,7 +69,7 @@ export default function NewProductPage() {
         </div>
         <div>
           <label className="field-label" htmlFor="product-color">
-            Brand color
+            {copy.brandColor}
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -83,7 +84,7 @@ export default function NewProductPage() {
         </div>
         {error && <p className="alert-error">{error}</p>}
         <button type="submit" disabled={submitting} className="btn-primary self-start">
-          {submitting ? "Creating…" : "Create product"}
+          {submitting ? copy.creating : copy.createProduct}
         </button>
       </form>
     </main>

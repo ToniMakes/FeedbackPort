@@ -4,6 +4,7 @@ import { FEEDBACK_STATUSES } from "@feedbackport/core";
 import { useEffect, useState } from "react";
 import { StatusBadge } from "@/components/status-badge";
 import { statusLabel } from "@/lib/status";
+import { useLanguage } from "@/components/language-provider";
 
 interface FeedbackItem {
   id: string;
@@ -24,6 +25,7 @@ export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
   const [loading, setLoading] = useState(true);
   const [productFilter, setProductFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const { locale, copy } = useLanguage();
 
   const effectiveProduct = productSlug ?? productFilter;
 
@@ -68,32 +70,32 @@ export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
       <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row">
         {!productSlug && (
           <input
-            aria-label="Filter by product slug"
-            placeholder="Filter by product slug (blank = all products)"
+            aria-label={copy.filterProduct}
+            placeholder={locale === "zh" ? `${copy.productSlug}（留空显示全部）` : copy.productSlug}
             value={productFilter}
             onChange={(event) => setProductFilter(event.target.value)}
             className="input sm:max-w-xs"
           />
         )}
         <select
-          aria-label="Filter feedback by status"
+          aria-label={copy.filterStatus}
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
           className="select sm:w-auto"
         >
-          <option value="">All statuses</option>
+          <option value="">{copy.allStatuses}</option>
           {FEEDBACK_STATUSES.map((status) => (
             <option key={status} value={status}>
-              {statusLabel(status)}
+              {statusLabel(status, locale)}
             </option>
           ))}
         </select>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-slate-400">Loading…</p>
+        <p className="py-8 text-center text-sm text-slate-400">{copy.loading}</p>
       ) : items.length === 0 ? (
-        <p className="mt-8 border-y border-slate-200 py-10 text-center text-sm text-slate-500">No matching feedback.</p>
+        <p className="mt-8 border-y border-slate-200 py-10 text-center text-sm text-slate-500">{copy.noFeedback}</p>
       ) : (
         <ul className="mt-6 flex flex-col">
           {items.map((item) => (
@@ -115,25 +117,26 @@ function FeedbackRow({
   onReply: (id: string, body: string) => void;
 }) {
   const [replyBody, setReplyBody] = useState("");
+  const { locale, copy } = useLanguage();
 
   return (
     <li className="admin-feedback-row">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
-          <p className="mt-1 text-xs text-slate-500">{item.submitter_email} · {new Date(item.created_at).toLocaleDateString("en-AU")}</p>
+          <p className="mt-1 text-xs text-slate-500">{item.submitter_email} · {new Date(item.created_at).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-AU")}</p>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={item.status} />
           <select
-            aria-label={`Change status for “${item.title}”`}
+            aria-label={`${copy.changeStatus} “${item.title}”`}
             value={item.status}
             onChange={(event) => onStatusChange(item.id, event.target.value)}
             className="select w-auto py-1.5 text-xs"
           >
             {FEEDBACK_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {statusLabel(status)}
+                {statusLabel(status, locale)}
               </option>
             ))}
           </select>
@@ -144,10 +147,10 @@ function FeedbackRow({
 
       <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row">
         <textarea
-          aria-label={`Reply to “${item.title}”`}
+          aria-label={`${copy.reply}: “${item.title}”`}
           value={replyBody}
           onChange={(event) => setReplyBody(event.target.value)}
-          placeholder="Write a reply…"
+          placeholder={copy.writeReply}
           className="textarea min-h-16 flex-1"
         />
         <button
@@ -158,7 +161,7 @@ function FeedbackRow({
           }}
           className="btn-primary self-end sm:self-end"
         >
-          Reply
+          {copy.reply}
         </button>
       </div>
     </li>

@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
 
   const { data: feedback, error: feedbackError } = await getSupabaseAdmin()
     .from("feedback")
-    .select("id, product_id, title, body, status, submitter_email, created_at, updated_at")
+    .select("id, product_id, title, body, status, created_at, updated_at")
     .eq("id", id)
     .maybeSingle();
 

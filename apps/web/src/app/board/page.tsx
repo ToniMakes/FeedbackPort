@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { BoardList } from "./board-list";
+import { resolveLocale } from "@/lib/ui-copy";
 
 /**
  * 公开面板入口，见 docs/API.md「Widget 初始化参数」旁边的公开面板地址说明。
@@ -12,8 +13,11 @@ export default async function BoardPage() {
   const productSlug = headerList.get("x-tenant-slug");
 
   if (!productSlug) {
+    const message = resolveLocale(headerList.get("accept-language")) === "zh"
+      ? "这个面板尚未关联产品，请打开为你的产品配置的面板网址。"
+      : "This board isn’t linked to a product. Open the board URL configured for your product.";
     return (
-      <p className="shell alert-error">No product was identified for this board. Open the board URL configured for your product, or set DEFAULT_TENANT_SLUG for local development.</p>
+      <p className="shell alert-error">{message}</p>
     );
   }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { FeedbackInbox } from "../../feedback-inbox";
+import { useLanguage } from "@/components/language-provider";
 
 interface ProductStat {
   id: string;
@@ -12,6 +13,7 @@ interface ProductStat {
 }
 
 export function ProductInbox({ slug }: { slug: string }) {
+  const { copy } = useLanguage();
   const [product, setProduct] = useState<ProductStat | null>(null);
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export function ProductInbox({ slug }: { slug: string }) {
   return (
     <main className="shell-wide page-enter">
       <Link href="/admin" className="link text-sm">
-        ← Back to products
+        {copy.backToProducts}
       </Link>
 
       <div className="mt-5 flex items-center gap-3">

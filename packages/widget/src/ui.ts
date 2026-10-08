@@ -16,10 +16,40 @@ export interface MountedWidget {
   turnstileContainer: HTMLElement;
 }
 
+const WIDGET_COPY = {
+  en: {
+    launcher: "Feedback",
+    title: "Share an idea",
+    close: "Close feedback form",
+    ideaTitle: "What would you like to see?",
+    details: "Add more detail (optional)",
+    email: "Your email",
+    emailHelp: "Your email lets the team follow up about this idea. It isn’t shown on the public board.",
+    submit: "Share idea",
+    sending: "Sending…",
+    success: "Thanks — your idea has been shared.",
+    error: "We couldn’t send your idea. Check your connection and try again.",
+  },
+  zh: {
+    launcher: "反馈",
+    title: "分享想法",
+    close: "关闭反馈表单",
+    ideaTitle: "你希望产品增加或改进什么？",
+    details: "补充一些背景，帮助我们理解这个想法（选填）",
+    email: "你的邮箱",
+    emailHelp: "团队会通过邮箱跟进这个想法；邮箱不会显示在公开面板上。",
+    submit: "提交想法",
+    sending: "正在提交…",
+    success: "感谢分享，想法已提交。",
+    error: "想法提交失败，请检查网络后重试。",
+  },
+} as const;
+
 export function mountWidget(
   config: WidgetConfig,
   onSubmit: (payload: FormSubmitPayload) => Promise<void>,
 ): MountedWidget {
+  const copy = WIDGET_COPY[config.locale];
   const host = document.createElement("div");
   host.id = "feedbackport-widget-root";
   document.body.appendChild(host);
@@ -71,6 +101,7 @@ export function mountWidget(
       .fh-close:hover { background: #f1f5f9; color: #475569; }
 
       .fh-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+      .fh-helper { margin: -4px 0 0; color: #64748b; font-size: 12px; line-height: 1.5; }
 
       .fh-panel input, .fh-panel textarea {
         width: 100%; padding: 9px 10px;
@@ -96,6 +127,11 @@ export function mountWidget(
         background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; font-size: 13px;
       }
       .fh-error.fh-visible { display: block; }
+      .fh-success {
+        display: none; margin: 0; padding: 8px 10px; border-radius: 8px;
+        background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; font-size: 13px;
+      }
+      .fh-success.fh-visible { display: block; }
 
       /* 蜜罐字段：视觉隐藏但仍存在于 DOM/tab 顺序之外，正常用户看不到也填不到，
          简单脚本容易照单全收，见 docs/ARCHITECTURE.md 防刷三层设计 */
@@ -107,20 +143,22 @@ export function mountWidget(
         .fh-button, .fh-panel, .fh-panel button[type="submit"] { transition: none !important; }
       }
     </style>
-    <button class="fh-button" type="button">💬 Feedback</button>
-    <form class="fh-panel">
+    <button class="fh-button" type="button" aria-expanded="false" aria-controls="feedbackport-widget-panel">💬 ${copy.launcher}</button>
+    <form class="fh-panel" id="feedbackport-widget-panel">
       <div class="fh-header">
-        <p class="fh-title">Share your feedback</p>
-        <button class="fh-close" type="button" aria-label="Close">×</button>
+        <p class="fh-title">${copy.title}</p>
+        <button class="fh-close" type="button" aria-label="${copy.close}">×</button>
       </div>
       <div class="fh-body">
-        <input name="title" placeholder="Summarize your idea" required maxlength="120" />
-        <textarea name="body" placeholder="More details (optional)" maxlength="2000"></textarea>
-        <input name="submitterEmail" type="email" placeholder="Your email" required value="${config.userEmail ?? ""}" />
+        <input name="title" aria-label="${copy.ideaTitle}" placeholder="${copy.ideaTitle}" required maxlength="120" />
+        <textarea name="body" aria-label="${copy.details}" placeholder="${copy.details}" maxlength="2000"></textarea>
+        <input name="submitterEmail" type="email" aria-label="${copy.email}" aria-describedby="feedbackport-email-help" placeholder="${copy.email}" required />
+        <p class="fh-helper" id="feedbackport-email-help">${copy.emailHelp}</p>
         <input class="fh-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="fh-turnstile"></div>
-        <p class="fh-error"></p>
-        <button type="submit">Submit feedback</button>
+        <p class="fh-error" role="alert"></p>
+        <p class="fh-success" role="status"></p>
+        <button type="submit">${copy.submit}</button>
       </div>
     </form>
   `;
@@ -130,18 +168,23 @@ export function mountWidget(
   const panel = shadow.querySelector<HTMLFormElement>(".fh-panel")!;
   const submitButton = shadow.querySelector<HTMLButtonElement>("button[type=submit]")!;
   const errorEl = shadow.querySelector<HTMLParagraphElement>(".fh-error")!;
+  const successEl = shadow.querySelector<HTMLParagraphElement>(".fh-success")!;
   const turnstileContainer = shadow.querySelector<HTMLDivElement>(".fh-turnstile")!;
+  const emailInput = shadow.querySelector<HTMLInputElement>('input[name="submitterEmail"]')!;
+  emailInput.value = config.userEmail ?? "";
   let closeTimer: number | undefined;
 
   function openPanel() {
     window.clearTimeout(closeTimer);
     panel.classList.add("open");
+    button.setAttribute("aria-expanded", "true");
     // 先 display:block 再下一帧加 fh-visible，让 opacity/transform 过渡能触发
     requestAnimationFrame(() => panel.classList.add("fh-visible"));
   }
 
   function closePanel() {
     panel.classList.remove("fh-visible");
+    button.setAttribute("aria-expanded", "false");
     window.clearTimeout(closeTimer);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       panel.classList.remove("open");
@@ -159,8 +202,9 @@ export function mountWidget(
   panel.addEventListener("submit", (event) => {
     event.preventDefault();
     errorEl.classList.remove("fh-visible");
+    successEl.classList.remove("fh-visible");
     submitButton.disabled = true;
-    submitButton.textContent = "Submitting…";
+    submitButton.textContent = copy.sending;
 
     const formData = new FormData(panel);
     void onSubmit({
@@ -170,18 +214,23 @@ export function mountWidget(
       honeypot: String(formData.get("website") ?? ""),
     })
       .then(() => {
-        closePanel();
         panel.reset();
+        successEl.textContent = copy.success;
+        successEl.classList.add("fh-visible");
       })
       .catch(() => {
-        errorEl.textContent = "Submission failed. Please try again.";
+        errorEl.textContent = copy.error;
         errorEl.classList.add("fh-visible");
       })
       .finally(() => {
         submitButton.disabled = false;
-        submitButton.textContent = "Submit feedback";
+        submitButton.textContent = copy.submit;
       });
   });
+
+  for (const field of panel.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input:not(.fh-hp), textarea")) {
+    field.addEventListener("input", () => successEl.classList.remove("fh-visible"));
+  }
 
   return { turnstileContainer };
 }

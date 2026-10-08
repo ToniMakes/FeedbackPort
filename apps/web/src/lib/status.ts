@@ -1,11 +1,12 @@
 import type { FeedbackStatus } from "@feedbackport/core";
+import { UI_COPY, type Locale } from "@/lib/ui-copy";
 
-export const STATUS_LABELS: Record<FeedbackStatus, string> = {
-  open: "Open",
-  planned: "Planned",
-  in_progress: "In progress",
-  done: "Done",
-  declined: "Declined",
+const STATUS_COPY: Record<FeedbackStatus, keyof (typeof UI_COPY)["en"]> = {
+  open: "statusOpen",
+  planned: "statusPlanned",
+  in_progress: "statusInProgress",
+  done: "statusDone",
+  declined: "statusDeclined",
 };
 
 export const STATUS_BADGE_CLASSES: Record<FeedbackStatus, string> = {
@@ -16,8 +17,9 @@ export const STATUS_BADGE_CLASSES: Record<FeedbackStatus, string> = {
   declined: "bg-rose-50 text-rose-700",
 };
 
-export function statusLabel(status: string): string {
-  return STATUS_LABELS[status as FeedbackStatus] ?? status;
+export function statusLabel(status: string, locale: Locale = "en"): string {
+  const key = STATUS_COPY[status as FeedbackStatus];
+  return key ? UI_COPY[locale][key] : status;
 }
 
 export function statusBadgeClass(status: string): string {

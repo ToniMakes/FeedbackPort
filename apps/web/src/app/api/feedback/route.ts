@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   // TODO: sort=votes 应按投票数排序，需要额外的聚合视图，先按最新排序占位，见 docs/ROADMAP.md
   let query = getSupabaseAdmin()
     .from("feedback")
-    .select("id, title, body, status, submitter_email, created_at, votes(count)")
+    .select("id, title, body, status, created_at, votes(count)")
     .eq("product_id", product.id)
     .is("duplicate_of", null)
     .order("created_at", { ascending: false });

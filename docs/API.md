@@ -34,11 +34,11 @@ Processing order: zod schema validation (`packages/core` — fields have to be p
 
 Response: `201 { id, status: 'open' }`
 
-### `GET /api/feedback?status=&sort=` — feedback list (called by the board, same-origin, tenant resolved from `x-tenant`)
+### `GET /api/feedback?status=` — feedback list (called by the board, same-origin, tenant resolved from `x-tenant`)
 
 - `status`: optional filter
-- `sort`: `votes` | `newest`, defaults to `votes`
-- Returns a paginated list; each item includes a vote count (aggregate query) and the latest reply's summary
+- Returns the current list ordered by creation date; each item includes an aggregate vote count
+- Public responses do not include submitter or voter email addresses.
 
 ### `POST /api/feedback/:id/vote` — vote
 
@@ -53,6 +53,7 @@ Request body: `{ productSlug: string; voterEmail: string; turnstileToken: string
 ### `GET /api/feedback/:id` — feedback detail
 
 Returns the feedback content plus its associated `replies` list (with an official-reply flag)
+Submitter email addresses are not returned by this public endpoint.
 
 ## Admin endpoints (require login)
 
@@ -85,12 +86,14 @@ How a host page embeds it:
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
   data-user-email="user@example.com"
+  data-lang="en"
   async
 ></script>
 ```
 
 - `data-product`: required, corresponds to `products.slug`
 - `data-api-base`: optional API origin. Defaults to the widget script's origin; set it when the widget script is hosted on a separate CDN or domain from the FeedbackPort API.
+- `data-lang`: optional `en` or `zh` override. By default, the widget follows the visitor's browser language and supports English and Simplified Chinese.
 - `data-turnstile-site-key`: required, your Cloudflare Turnstile site key. For local development, Cloudflare publishes a well-known test key that always passes — `1x00000000000000000000AA` — so you don't need a real Cloudflare account to try the widget end to end
 - `data-user-email`: optional — the host product's logged-in user's email, pre-fills the submission form so the user doesn't have to type it again (this is a lightweight substitute for a real SSO integration; the host page decides whether to pass it, and the widget performs no identity verification on it)
 
@@ -157,11 +160,11 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 
 响应：`201 { id, status: 'open' }`
 
-### `GET /api/feedback?status=&sort=` 反馈列表（board 调用，同源，按 `x-tenant` 解析的租户）
+### `GET /api/feedback?status=` 反馈列表（board 调用，同源，按 `x-tenant` 解析的租户）
 
 - `status`：可选过滤
-- `sort`：`votes` | `newest`，默认 `votes`
-- 返回分页列表，每项含投票数（聚合查询）、最新一条回复摘要
+- 返回按创建时间倒序排列的列表，每项含聚合投票数
+- 公开响应不包含提交者或投票者的邮箱地址
 
 ### `POST /api/feedback/:id/vote` 投票
 
@@ -176,6 +179,7 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 ### `GET /api/feedback/:id` 反馈详情
 
 返回反馈内容 + 关联 `replies` 列表（含官方回复标记）
+该公开端点不会返回提交者邮箱。
 
 ## 管理端点（需登录）
 
@@ -208,12 +212,14 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
   data-user-email="user@example.com"
+  data-lang="zh"
   async
 ></script>
 ```
 
 - `data-product`：必填，对应 `products.slug`
 - `data-api-base`：选填，API 的 origin。默认使用 widget 脚本所在的 origin；当脚本托管在与 FeedbackPort API 不同的 CDN 或域名时，需要显式设置。
+- `data-lang`：选填，可设为 `en` 或 `zh` 覆盖语言。默认跟随访问者的浏览器语言，支持英文和简体中文。
 - `data-turnstile-site-key`：必填，你的 Cloudflare Turnstile site key。本地开发不需要真实 Cloudflare 账号——Cloudflare 官方发布了一个永远通过验证的测试 key：`1x00000000000000000000AA`，用这个就能把 widget 端到端跑通
 - `data-user-email`：选填，宿主产品已登录用户的邮箱，预填提交表单，免去用户重复输入（这是替代真正 SSO 集成的轻量方案，宿主页面自行决定是否传递，widget 不做身份校验）
 

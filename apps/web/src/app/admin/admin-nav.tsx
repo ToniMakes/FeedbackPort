@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useLanguage } from "@/components/language-provider";
 
 export function AdminNav() {
   const router = useRouter();
+  const { copy } = useLanguage();
 
   async function handleSignOut() {
     await getSupabaseBrowserClient().auth.signOut();
@@ -20,14 +22,14 @@ export function AdminNav() {
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
             F
           </span>
-          FeedbackPort Admin
+          {copy.adminBrand}
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link href="/admin/products/new" className="btn-ghost">
-            + Add product
+            + {copy.addProduct}
           </Link>
           <button type="button" onClick={() => void handleSignOut()} className="btn-ghost">
-            Sign out
+            {copy.signOut}
           </button>
         </nav>
       </div>

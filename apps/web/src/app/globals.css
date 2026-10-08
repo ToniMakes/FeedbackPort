@@ -164,6 +164,14 @@
     background: #fff5f4;
     color: #a83f37;
   }
+  .alert-success {
+    border: 1px solid #a7f3d0;
+    border-radius: 0.5rem;
+    background: #ecfdf5;
+    padding: 0.625rem 0.75rem;
+    color: #047857;
+    font-size: 0.875rem;
+  }
 
   .eyebrow {
     @apply text-xs font-semibold uppercase tracking-[0.12em];
@@ -237,6 +245,7 @@
   .btn-secondary:hover:not(:disabled), .btn-ghost:hover:not(:disabled) { background: #25262b; border-color: #484951; }
   .btn-ghost { color: #a1a2aa; }
   .alert-error { border-color: #623638; background: #2b1c1e; color: #ffaaa5; }
+  .alert-success { border-color: #27513f; background: #172921; color: #8ed5b1; }
   .badge[class~="bg-slate-100"] { background: #292a2f; color: #c1c2ca; }
   .badge[class~="bg-violet-50"] { background: #292342; color: #c1b7ff; }
   .badge[class~="bg-amber-50"] { background: #33291b; color: #f3ca83; }

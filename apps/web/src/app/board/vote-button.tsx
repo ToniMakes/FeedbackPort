@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { getTurnstileToken } from "@/lib/turnstile-client";
+import { useLanguage } from "@/components/language-provider";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -21,7 +22,8 @@ export function VoteButton({
 }) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "verifying" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "verifying" | "error" | "voted" | "already">("idle");
+  const { copy } = useLanguage();
   const turnstileContainerRef = useRef<HTMLDivElement>(null);
 
   async function handleVote() {
@@ -39,10 +41,11 @@ export function VoteButton({
         body: JSON.stringify({ productSlug, voterEmail: email, turnstileToken }),
       });
       if (!res.ok) throw new Error("vote request failed");
+      const result = (await res.json()) as { alreadyVoted?: boolean };
 
       setOpen(false);
       setEmail("");
-      setStatus("idle");
+      setStatus(result.alreadyVoted ? "already" : "voted");
       onVoted?.();
     } catch {
       setStatus("error");
@@ -51,8 +54,8 @@ export function VoteButton({
 
   if (!open) {
     return (
-      <button type="button" onClick={() => setOpen(true)} className="btn-secondary">
-        ▲ Vote
+      <button type="button" onClick={() => setOpen(true)} className="btn-secondary" disabled={status === "voted" || status === "already"}>
+        {status === "voted" ? copy.voted : status === "already" ? copy.alreadyVoted : `▲ ${copy.vote}`}
       </button>
     );
   }
@@ -62,14 +65,16 @@ export function VoteButton({
       <input
         type="email"
         required
-        aria-label="Your email (used to prevent duplicate votes; not shown publicly)"
-        placeholder="Your email (used to prevent duplicate votes; not shown publicly)"
+        aria-label={copy.yourEmail}
+        placeholder={copy.yourEmail}
+        aria-describedby={`vote-email-help-${feedbackId}`}
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         className="input"
       />
+      <p id={`vote-email-help-${feedbackId}`} className="text-xs text-slate-500 dark:text-slate-400">{copy.voteEmailHelp}</p>
       <div ref={turnstileContainerRef} />
-      {status === "error" && <p className="alert-error">Vote failed. Please try again.</p>}
+      {status === "error" && <p className="alert-error">{copy.voteFailed}</p>}
       <div className="flex gap-2">
         <button
           type="button"
@@ -77,10 +82,10 @@ export function VoteButton({
           onClick={() => void handleVote()}
           className="btn-primary flex-1"
         >
-          {status === "verifying" ? "Verifying…" : "Confirm vote"}
+          {status === "verifying" ? copy.voteSending : copy.confirmVote}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
-          Cancel
+          {copy.cancel}
         </button>
       </div>
     </div>
