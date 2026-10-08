@@ -4,8 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 /**
- * PATCH /api/admin/feedback/:id —— 改状态或指派判重目标。
- * 写入成功后不主动发通知，由 DB Webhook 异步触发 notify-submitter，见 docs/ARCHITECTURE.md。
+ * PATCH /api/admin/feedback/:id: change status or assign a duplicate target.
+ * No notification is sent directly after a successful write; a DB webhook triggers notify-submitter asynchronously (see docs/ARCHITECTURE.md).
  */
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, response } = await requireAdmin();

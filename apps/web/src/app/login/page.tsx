@@ -5,8 +5,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { useLanguage } from "@/components/language-provider";
 
 /**
- * 管理后台登录页，故意放在 /login 而不是 /admin/login——如果放进 app/admin/ 目录，
- * 会被 admin/layout.tsx 的登录态检查连带保护，导致未登录时重定向到自己，死循环。
+ * Admin login page. It lives at /login rather than /admin/login on purpose: inside app/admin/ it would be
+ * covered by the login check in admin/layout.tsx, redirecting signed-out visitors to itself in an endless loop.
  */
 export default function LoginPage() {
   const { copy } = useLanguage();
@@ -18,8 +18,8 @@ export default function LoginPage() {
     setStatus("sending");
 
     const supabase = getSupabaseBrowserClient();
-    // shouldCreateUser: false —— 只有 Supabase 项目里已存在的管理员账号能登录，
-    // 防止任意邮箱靠 magic link 自助注册，见 docs/ARCHITECTURE.md「安全边界」
+    // shouldCreateUser: false: only admin accounts that already exist in the Supabase project can sign in,
+    // so arbitrary emails can't self-register via magic link; see docs/ARCHITECTURE.md, "Security boundaries"
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {

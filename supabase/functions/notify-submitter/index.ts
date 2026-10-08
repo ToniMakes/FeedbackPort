@@ -1,5 +1,5 @@
-// Deno Edge Function，由 Supabase Database Webhook 触发，不被业务代码直接调用。
-// 契约见 docs/API.md「事件驱动通知契约」；解耦设计动机见 docs/ARCHITECTURE.md「关键解耦点」。
+// Deno Edge Function, triggered by a Supabase Database Webhook; never called directly by business code.
+// Contract: see "Event-driven notification contract" in docs/API.md; design rationale: "The key decoupling point" in docs/ARCHITECTURE.md.
 // Webhook triggers and their per-project Vault configuration are installed by
 // the repeatable migration and infra/Configure-SupabaseDatabaseWebhooks.ps1.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -18,10 +18,10 @@ interface NotificationPlan {
 }
 
 Deno.serve(async (req: Request) => {
-  // 关掉了 Supabase 的 "Verify JWT" 开关（那个验证的是 Supabase 自己签发的 JWT，
-  // 新版 sb_secret_ 密钥体系下不一定能满足），改用共享密钥自己把关——
-  // 没有这一步，任何知道这个 URL 的人都能伪造 webhook 请求体，
-  // 拿你的 Resend 账号当垃圾邮件转发器给任意地址发信。
+  // The Supabase "Verify JWT" toggle is off (it checks JWTs signed by Supabase itself, which the newer
+  // sb_secret_ key system doesn't necessarily satisfy), so we check a shared secret ourselves.
+  // Without this, anyone who knows the URL could forge a webhook payload
+  // and use your Resend account as a spam relay to email arbitrary addresses.
   const expectedSecret = Deno.env.get("WEBHOOK_SECRET");
   if (!expectedSecret || req.headers.get("x-webhook-secret") !== expectedSecret) {
     return new Response("unauthorized", { status: 401 });
@@ -41,8 +41,8 @@ Deno.serve(async (req: Request) => {
 
   const resendApiKey = Deno.env.get("RESEND_API_KEY");
   if (!resendApiKey) {
-    // 没配 Resend key 时不让整个 webhook 报错阻塞，只记录跳过——
-    // 自部署的人如果暂时不想接邮件，功能其余部分不受影响
+    // A missing Resend key shouldn't make the whole webhook error out; just record the skip.
+    // Self-hosters who don't want email yet keep the rest of the system working
     console.warn("RESEND_API_KEY not set, skipping email send");
     return jsonResponse({ skipped: true, reason: "no RESEND_API_KEY" });
   }
@@ -73,7 +73,7 @@ async function buildNotificationPlan(
 
     return {
       recipients: new Set([feedback.submitter_email as string]),
-      subject: `你的反馈「${feedback.title}」有新回复`,
+      subject: `New reply to your feedback "${feedback.title}"`,
       text: String(payload.record.body ?? ""),
     };
   }
@@ -95,8 +95,8 @@ async function buildNotificationPlan(
 
     return {
       recipients,
-      subject: `你关注的反馈「${payload.record.title}」状态变更为 ${payload.record.status}`,
-      text: `状态已更新为：${payload.record.status}`,
+      subject: `Status of feedback you follow "${payload.record.title}" changed to ${payload.record.status}`,
+      text: `The status was updated to: ${payload.record.status}`,
     };
   }
 

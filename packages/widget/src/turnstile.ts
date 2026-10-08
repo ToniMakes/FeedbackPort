@@ -36,9 +36,9 @@ function loadTurnstileScript(): Promise<void> {
 }
 
 /**
- * 在 Shadow DOM 内的容器渲染 Turnstile。传的是元素引用而不是选择器字符串——
- * document.querySelector 看不进 shadow root，必须直接给元素对象，见 ui.ts。
- * 本地开发用 Cloudflare 官方测试 site key 1x00000000000000000000AA（永远通过）。
+ * Render Turnstile in a container inside the Shadow DOM. It takes an element reference rather than a selector string:
+ * document.querySelector can't see into a shadow root, so the element object must be passed in directly; see ui.ts.
+ * For local development use Cloudflare's official test site key 1x00000000000000000000AA (always passes).
  */
 export async function getTurnstileToken(container: HTMLElement, siteKey: string): Promise<string> {
   await loadTurnstileScript();

@@ -8,8 +8,8 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { publicPostCorsPreflight, withPublicPostCors } from "@/lib/public-post-cors";
 
 /**
- * POST /api/feedback/:id/vote —— 统一要求 productSlug（不区分 board/widget 调用），
- * 用来在写入前二次核对该 feedback 确实属于这个租户，见 docs/ARCHITECTURE.md「投票」数据流。
+ * POST /api/feedback/:id/vote: always requires productSlug (board and widget aren't distinguished),
+ * used to double-check before the write that the feedback really belongs to this tenant; see the "Voting" data flow in docs/ARCHITECTURE.md.
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .insert({ feedback_id: id, voter_email: voterEmail });
 
   if (voteError) {
-    // 23505 = unique_violation，即 (feedback_id, voter_email) 已存在，见 docs/DATA_MODEL.md
+    // 23505 = unique_violation, i.e. (feedback_id, voter_email) already exists; see docs/DATA_MODEL.md
     if (voteError.code === "23505") {
       return withPublicPostCors(NextResponse.json({ alreadyVoted: true }, { status: 200 }));
     }

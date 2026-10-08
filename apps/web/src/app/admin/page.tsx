@@ -15,10 +15,10 @@ interface ProductStat {
 }
 
 /**
- * 管理后台首页：产品优先导航——先看产品列表，点进去才是具体反馈。
- * 跨产品统一收件箱（docs/ARCHITECTURE.md 的核心差异化设计）没有丢，
- * 挪到了 /admin/all，用页面右上角的链接进去，"一眼看完"改成靠每张
- * 产品卡片上的待处理数体现，而不是默认摊开一个大列表。
+ * Admin home: product-first navigation. Pick a product first, then open its feedback.
+ * The cross-product unified inbox (the core differentiator in docs/ARCHITECTURE.md) isn't lost:
+ * it moved to /admin/all, reachable from the link at the top right, and the "see everything at a glance" idea
+ * is now carried by the pending count on each product card instead of one big default list.
  */
 export default function AdminProductsPage() {
   const { copy } = useLanguage();

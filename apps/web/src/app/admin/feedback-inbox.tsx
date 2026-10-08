@@ -16,9 +16,9 @@ interface FeedbackItem {
 }
 
 /**
- * 反馈列表 + 改状态 + 写回复，被两处复用：
- * - 不传 productSlug：/admin/all 的跨产品全部反馈（见 docs/ARCHITECTURE.md「跨产品统一收件箱」）
- * - 传 productSlug：/admin/products/[slug] 的单产品视图，产品已经从 URL 确定，不需要再给筛选框
+ * Feedback list + status changes + replies, reused in two places:
+ * - No productSlug: the all-products feed at /admin/all (see docs/ARCHITECTURE.md, "Cross-product unified inbox")
+ * - With productSlug: the single-product view at /admin/products/[slug]; the product is already set by the URL, so no filter box is needed
  */
 export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
   const [items, setItems] = useState<FeedbackItem[]>([]);

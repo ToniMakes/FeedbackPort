@@ -5,7 +5,7 @@ interface TurnstileVerifyResponse {
   "error-codes"?: string[];
 }
 
-/** 见 docs/ARCHITECTURE.md「防刷三层」——蜜罐和限流之后，最后一道拦截自动化工具的关卡 */
+/** See docs/ARCHITECTURE.md, "Three-layer anti-abuse": after the honeypot, the gate against automated tools */
 export async function verifyTurnstileToken(token: string, remoteIp?: string): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
   if (!secret) {

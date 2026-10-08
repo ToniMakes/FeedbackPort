@@ -10,14 +10,14 @@ function makeScript(dataset: Record<string, string>): HTMLScriptElement {
 }
 
 describe("readConfig", () => {
-  it("解析必填的 productSlug 和 turnstileSiteKey", () => {
+  it("parses the required productSlug and turnstileSiteKey", () => {
     const config = readConfig(makeScript({ product: "cardwhisper", turnstileSiteKey: "1x00000000000000000000AA" }));
     expect(config.productSlug).toBe("cardwhisper");
     expect(config.turnstileSiteKey).toBe("1x00000000000000000000AA");
     expect(config.userEmail).toBeUndefined();
   });
 
-  it("解析可选的 userEmail 和 apiBase", () => {
+  it("parses the optional userEmail and apiBase", () => {
     const config = readConfig(
       makeScript({
         product: "cardwhisper",
@@ -30,17 +30,17 @@ describe("readConfig", () => {
     expect(config.apiBase).toBe("https://api.example.com");
   });
 
-  it("缺少 data-product 时抛出 WidgetConfigError", () => {
+  it("throws WidgetConfigError when data-product is missing", () => {
     expect(() => readConfig(makeScript({ turnstileSiteKey: "1x00000000000000000000AA" }))).toThrow(
       WidgetConfigError,
     );
   });
 
-  it("缺少 data-turnstile-site-key 时抛出 WidgetConfigError", () => {
+  it("throws WidgetConfigError when data-turnstile-site-key is missing", () => {
     expect(() => readConfig(makeScript({ product: "cardwhisper" }))).toThrow(WidgetConfigError);
   });
 
-  it("script 为 null 时抛出 WidgetConfigError", () => {
+  it("throws WidgetConfigError when script is null", () => {
     expect(() => readConfig(null)).toThrow(WidgetConfigError);
   });
 });

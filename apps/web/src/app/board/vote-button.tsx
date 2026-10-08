@@ -7,9 +7,9 @@ import { useLanguage } from "@/components/language-provider";
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 /**
- * 投票的内联表单，替代早期用 window.prompt() 拿邮箱的占位实现——
- * Turnstile 需要一个常驻的 DOM 容器才能渲染挑战，prompt() 弹窗没有地方挂载它，
- * 所以先把交互改成这种"点击展开表单"的形态，再接真实 Turnstile。
+ * Inline form for voting, replacing the early window.prompt() placeholder used to collect the email:
+ * Turnstile needs a persistent DOM container to render its challenge into, and a prompt() dialog has nowhere to mount it,
+ * so the interaction became a click-to-expand form, with real Turnstile wired in afterwards.
  */
 export function VoteButton({
   productSlug,

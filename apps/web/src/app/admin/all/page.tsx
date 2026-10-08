@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FeedbackInbox } from "../feedback-inbox";
 import { useLanguage } from "@/components/language-provider";
 
-/** 跨产品统一收件箱，见 docs/ARCHITECTURE.md「跨产品统一收件箱」。管理后台首页改成产品优先导航后，这是保留"一眼看完所有产品"的入口。 */
+/** Cross-product unified inbox; see docs/ARCHITECTURE.md, "Cross-product unified inbox". After the admin home moved to product-first navigation, this is the entry point that keeps the "see everything at a glance" view. */
 export default function AdminAllFeedbackPage() {
   const { copy } = useLanguage();
   return (

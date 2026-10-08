@@ -8,9 +8,8 @@ export interface FormSubmitPayload {
 }
 
 /**
- * 挂载到 Shadow DOM，避免样式和宿主页面冲突（见 docs/decisions/0002-tech-stack.md）。
- * 目前只是最小可用骨架：一个悬浮按钮 + 一个内联表单，没有做过渡动画/多步骤 UI，
- * 后续迭代（见 docs/ROADMAP.md）在此基础上扩展。
+ * Mounted in a Shadow DOM so styles can't clash with the host page (see docs/decisions/0002-tech-stack.md).
+ * A floating launcher button plus an inline form; later iterations build on this (see docs/ROADMAP.md).
  */
 export interface MountedWidget {
   turnstileContainer: HTMLElement;
@@ -133,8 +132,8 @@ export function mountWidget(
       }
       .fh-success.fh-visible { display: block; }
 
-      /* 蜜罐字段：视觉隐藏但仍存在于 DOM/tab 顺序之外，正常用户看不到也填不到，
-         简单脚本容易照单全收，见 docs/ARCHITECTURE.md 防刷三层设计 */
+      /* Honeypot field: visually hidden and outside the tab order, so real users never see or fill it,
+         while simple scripts tend to fill every field; see the three-layer anti-abuse design in docs/ARCHITECTURE.md */
       .fh-hp {
         position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden;
       }
@@ -178,7 +177,7 @@ export function mountWidget(
     window.clearTimeout(closeTimer);
     panel.classList.add("open");
     button.setAttribute("aria-expanded", "true");
-    // 先 display:block 再下一帧加 fh-visible，让 opacity/transform 过渡能触发
+    // set display:block first, then add fh-visible on the next frame so the opacity/transform transition fires
     requestAnimationFrame(() => panel.classList.add("fh-visible"));
   }
 

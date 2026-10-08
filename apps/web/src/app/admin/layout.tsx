@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { AdminNav } from "./admin-nav";
 
-/** 保护 /admin/** 下所有路由，未登录一律跳 /login，见 src/app/login/page.tsx 顶部的注释 */
+/** Protects every route under /admin/**; signed-out visitors are redirected to /login (see the comment at the top of src/app/login/page.tsx) */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const supabase = await getSupabaseServerClient();
   const {

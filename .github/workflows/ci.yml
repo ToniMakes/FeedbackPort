@@ -11,8 +11,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 版本号不在这里写，读根 package.json 的 packageManager 字段，
-      # 避免两处版本声明冲突（pnpm/action-setup 会直接报错拒绝启动）
+      # No version here: pnpm/action-setup reads the packageManager field in the root package.json,
+      # because declaring it in two places makes the action refuse to start
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
@@ -28,7 +28,7 @@ jobs:
 
       - run: pnpm -r test
 
-      # webpack 的模块解析比 tsc/vitest（走 esbuild/rollup）严格，之前发现过
-      # packages/core 里 .js 后缀的相对导入能过 typecheck/test 但过不了这个，
-      # 留着这一步防止同类问题再溜回来
+      # webpack resolves modules more strictly than tsc/vitest (esbuild/rollup). A relative import
+      # with a .js suffix in packages/core once passed typecheck and tests but failed here;
+      # keep this step so the same class of bug can't slip back in
       - run: pnpm --filter @feedbackport/web build

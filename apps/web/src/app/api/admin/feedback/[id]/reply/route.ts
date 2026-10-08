@@ -4,8 +4,8 @@ import { requireAdmin } from "@/lib/require-admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 /**
- * POST /api/admin/feedback/:id/reply —— 写管理员回复（is_admin = true）。
- * 同样不主动发通知，由 DB Webhook 异步触发 notify-submitter，见 docs/ARCHITECTURE.md。
+ * POST /api/admin/feedback/:id/reply: write an admin reply (is_admin = true).
+ * Likewise no direct notification; a DB webhook triggers notify-submitter asynchronously (see docs/ARCHITECTURE.md).
  */
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { user, response } = await requireAdmin();

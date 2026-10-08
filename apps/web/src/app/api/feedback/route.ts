@@ -8,8 +8,8 @@ import { verifyTurnstileToken } from "@/lib/turnstile";
 import { publicPostCorsPreflight, withPublicPostCors } from "@/lib/public-post-cors";
 
 /**
- * GET /api/feedback —— board 调用（同源），租户由中间件从子域名解析后写进
- * x-tenant-slug 请求头，见 docs/ARCHITECTURE.md「多租户路由设计」。
+ * GET /api/feedback: called by the board (same-origin). Middleware resolves the tenant from the subdomain
+ * and writes it to the x-tenant-slug request header; see docs/ARCHITECTURE.md, "Multi-tenant routing design".
  */
 export async function GET(request: NextRequest) {
   const tenantSlug = request.headers.get("x-tenant-slug");
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   if (statusFilter && !FEEDBACK_STATUSES.includes(statusFilter as (typeof FEEDBACK_STATUSES)[number])) {
     return NextResponse.json({ error: "invalid status" }, { status: 400 });
   }
-  // TODO: sort=votes 应按投票数排序，需要额外的聚合视图，先按最新排序占位，见 docs/ROADMAP.md
+  // Always newest first; the board sorts by vote count client-side (the list is not paginated yet)
   let query = getSupabaseAdmin()
     .from("feedback")
     .select("id, title, body, status, created_at, votes(count)")
@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/feedback —— widget 提交反馈的入口（跨域，见 docs/API.md）。
+ * POST /api/feedback: entry point for widget feedback submissions (cross-origin; see docs/API.md).
  *
- * 处理顺序（见 docs/ARCHITECTURE.md「提交反馈」数据流）：
- *   zod schema 校验（要先解析出各字段才能往下走）→ 蜜罐检查 → Turnstile 校验
- *   → IP 频率限制（Redis）→ 按 productSlug 解析租户 → 写入 feedback 表
+ * Processing order (see the "Submitting feedback" data flow in docs/ARCHITECTURE.md):
+ *   zod schema validation (fields must be parsed first) → honeypot check → Turnstile verification
+ *   → IP rate limit (Redis) → resolve the tenant by productSlug → insert into feedback
  */
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   const { productSlug, title, body: feedbackBody, submitterEmail, turnstileToken, honeypot } =
     parsed.data;
 
-  // 蜜罐字段被填了 = 大概率是脚本，静默假装成功，不告诉对方判定逻辑
+  // A filled honeypot almost certainly means a script: silently pretend it worked and don't reveal the detection logic
   if (honeypot) {
     return withPublicPostCors(NextResponse.json({ id: "ignored", status: "open" }, { status: 201 }));
   }

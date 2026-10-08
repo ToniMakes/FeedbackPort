@@ -27,7 +27,7 @@ function getLimiter(kind: RateLimitKind): Ratelimit {
   return limiter;
 }
 
-/** 阈值统一来自 @feedbackport/core 的 RATE_LIMITS，见 docs/ARCHITECTURE.md 防刷三层设计 */
+/** Thresholds all come from RATE_LIMITS in @feedbackport/core; see the three-layer anti-abuse design in docs/ARCHITECTURE.md */
 export async function checkRateLimit(kind: RateLimitKind, identifier: string): Promise<boolean> {
   const { success } = await getLimiter(kind).limit(identifier);
   return success;

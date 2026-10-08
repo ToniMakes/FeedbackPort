@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 
-/** Vercel/大多数反向代理会写 x-forwarded-for，取第一个（最靠近客户端的）地址 */
+/** Vercel and most reverse proxies set x-forwarded-for; use the first (closest to the client) address */
 export function getClientIp(request: NextRequest): string {
   const forwardedFor = request.headers.get("x-forwarded-for");
   if (forwardedFor) {
@@ -10,7 +10,7 @@ export function getClientIp(request: NextRequest): string {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
-/** 频率限制不存明文 IP，落库/落 Redis 前先做单向哈希，见 docs/ARCHITECTURE.md */
+/** Rate limiting never stores the plaintext IP; hash it one-way before it reaches Redis. See docs/ARCHITECTURE.md */
 export async function hashIp(ip: string): Promise<string> {
   const data = new TextEncoder().encode(ip);
   const digest = await crypto.subtle.digest("SHA-256", data);
