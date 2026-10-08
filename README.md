@@ -11,6 +11,10 @@ FeedbackPort is an open-source feedback hub for indie developers and small teams
 - Review and reply to feedback by product or across your portfolio.
 - Show users the current status of each idea on the public board.
 
+## Live demo
+
+Try the public board with sample data: <https://demo.board.tonimakes.com/board>. It is a fictional product, and visitor submissions are cleared periodically.
+
 ## Screenshots
 
 ![Searching, filtering and submitting an idea on the public board](docs/images/demo.gif)
@@ -120,6 +124,10 @@ FeedbackPort 是面向独立开发者和小团队的开源反馈工具。为每�
 - 通过轻量组件从网站收集想法，不依赖宿主页面的前端框架。
 - 按产品或跨产品查看反馈、更新状态并回复用户。
 - 在公开面板展示每条想法的当前状态。
+
+## 在线演示
+
+用示例数据体验公开面板：<https://demo.board.tonimakes.com/board>。这是一个虚构的产品，访客提交的内容会定期清理。
 
 ## 截图
 

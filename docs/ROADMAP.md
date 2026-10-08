@@ -24,7 +24,7 @@
 - [x] GitHub Actions CI (lint + typecheck + test)
 - [x] Example tenant seed data: fictional `demo` product (`supabase/seed.sql`, runs on `supabase db reset`)
 - [x] MIT LICENSE file
-- [ ] A public demo deployment: the scheduled reset is in place (`.github/workflows/demo-reset.yml`, inert until a `DEMO_DATABASE_URL` secret is set); the demo environment itself is not deployed yet
+- [x] A public demo at `demo.board.tonimakes.com`: a fictional `demo` product on the production deployment, seeded from `supabase/seed.sql`. The scheduled reset (`.github/workflows/demo-reset.yml`) stays inert until a `DEMO_DATABASE_URL` secret is set, so until then visitor submissions are cleared by re-running the seed by hand
 
 **Acceptance criteria**: a stranger clones the repo and, following the README, has a local instance running within 15 minutes.
 
@@ -77,7 +77,7 @@
 - [x] GitHub Actions CI（lint + typecheck + test）
 - [x] 示例租户种子数据：虚构的 `demo` 产品（`supabase/seed.sql`，`supabase db reset` 时自动执行）
 - [x] MIT LICENSE 文件
-- [ ] 公开 Demo 部署：定时重置已就绪（`.github/workflows/demo-reset.yml`，设置 `DEMO_DATABASE_URL` secret 前不会执行）；Demo 环境本身尚未部署
+- [x] 公开 Demo：`demo.board.tonimakes.com`，在生产部署上放一个虚构的 `demo` 产品，数据来自 `supabase/seed.sql`。定时重置（`.github/workflows/demo-reset.yml`）在设置 `DEMO_DATABASE_URL` secret 之前不会执行，此前需要手动重新执行种子脚本来清理访客提交的内容
 
 **验收标准**：陌生人 clone 仓库后，跟着 README 能在 15 分钟内跑起一个本地实例。
 
