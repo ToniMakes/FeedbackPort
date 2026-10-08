@@ -78,12 +78,12 @@ Email is event-driven: database changes trigger a Supabase Edge Function, which 
 | Abuse prevention | Cloudflare Turnstile, honeypot, Upstash Redis |
 | Notifications | Supabase Database Webhooks, Deno Edge Functions, Resend |
 | Current production hosting | Vercel |
-| Container deployment | Multi-stage Docker, Node.js 22, non-root runtime; AWS ECS/Fargate staging is in progress |
+| Container deployment | Multi-stage Docker, Node.js 22, non-root runtime; AWS ECS/Fargate staging environment |
 | CI | GitHub Actions: lint, typecheck, tests, and web build |
 
 ## Project status
 
-FeedbackPort is an actively developed open-source project. Its current production deployment runs on Vercel with Supabase and supporting services; an AWS ECS/Fargate deployment is also in progress. The repository contains the application, widget, and infrastructure code, while deployment configuration depends on the environment. FeedbackPort is designed for self-hosting and is not a hosted SaaS sign-up service. Never put server-side credentials in client-side settings.
+FeedbackPort is an actively developed open-source project. Production runs on Vercel with Supabase and supporting services, while an AWS ECS/Fargate staging environment is used for deployment verification. The repository contains the application, widget, and infrastructure code; deployment configuration depends on the environment. FeedbackPort is designed for self-hosting and is not a hosted SaaS sign-up service. Never put server-side credentials in client-side settings.
 
 ## Local development
 

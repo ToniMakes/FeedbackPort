@@ -26,7 +26,7 @@ export function ProductInbox({ slug }: { slug: string }) {
   return (
     <main className="shell-wide page-enter">
       <Link href="/admin" className="link text-sm">
-        ← 返回产品列表
+        ← Back to products
       </Link>
 
       <div className="mt-5 flex items-center gap-3">

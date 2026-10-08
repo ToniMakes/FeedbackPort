@@ -5,6 +5,7 @@ import { getClientIp, hashIp } from "@/lib/request-ip";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getProductBySlug } from "@/lib/tenant";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { publicPostCorsPreflight, withPublicPostCors } from "@/lib/public-post-cors";
 
 /**
  * GET /api/feedback —— board 调用（同源），租户由中间件从子域名解析后写进
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
   const parsed = submitFeedbackSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return withPublicPostCors(NextResponse.json({ error: parsed.error.flatten() }, { status: 400 }));
   }
 
   const { productSlug, title, body: feedbackBody, submitterEmail, turnstileToken, honeypot } =
@@ -67,24 +68,24 @@ export async function POST(request: NextRequest) {
 
   // 蜜罐字段被填了 = 大概率是脚本，静默假装成功，不告诉对方判定逻辑
   if (honeypot) {
-    return NextResponse.json({ id: "ignored", status: "open" }, { status: 201 });
+    return withPublicPostCors(NextResponse.json({ id: "ignored", status: "open" }, { status: 201 }));
   }
 
   const ip = getClientIp(request);
 
   const turnstileOk = await verifyTurnstileToken(turnstileToken, ip);
   if (!turnstileOk) {
-    return NextResponse.json({ error: "turnstile verification failed" }, { status: 403 });
+    return withPublicPostCors(NextResponse.json({ error: "turnstile verification failed" }, { status: 403 }));
   }
 
   const withinLimit = await checkRateLimit("submitFeedback", await hashIp(ip));
   if (!withinLimit) {
-    return NextResponse.json({ error: "too many requests" }, { status: 429 });
+    return withPublicPostCors(NextResponse.json({ error: "too many requests" }, { status: 429 }));
   }
 
   const product = await getProductBySlug(productSlug);
   if (!product) {
-    return NextResponse.json({ error: "unknown product" }, { status: 404 });
+    return withPublicPostCors(NextResponse.json({ error: "unknown product" }, { status: 404 }));
   }
 
   const { data, error } = await getSupabaseAdmin()
@@ -99,8 +100,12 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: "failed to save feedback" }, { status: 500 });
+    return withPublicPostCors(NextResponse.json({ error: "failed to save feedback" }, { status: 500 }));
   }
 
-  return NextResponse.json({ id: data.id, status: data.status }, { status: 201 });
+  return withPublicPostCors(NextResponse.json({ id: data.id, status: data.status }, { status: 201 }));
+}
+
+export async function OPTIONS() {
+  return publicPostCorsPreflight();
 }

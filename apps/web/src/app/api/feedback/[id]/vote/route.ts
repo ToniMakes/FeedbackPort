@@ -5,6 +5,7 @@ import { getClientIp, hashIp } from "@/lib/request-ip";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getProductBySlug } from "@/lib/tenant";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { publicPostCorsPreflight, withPublicPostCors } from "@/lib/public-post-cors";
 
 /**
  * POST /api/feedback/:id/vote —— 统一要求 productSlug（不区分 board/widget 调用），
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   const parsed = voteFromWidgetSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return withPublicPostCors(NextResponse.json({ error: parsed.error.flatten() }, { status: 400 }));
   }
 
   const { productSlug, voterEmail, turnstileToken } = parsed.data;
@@ -25,17 +26,17 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
   const turnstileOk = await verifyTurnstileToken(turnstileToken, ip);
   if (!turnstileOk) {
-    return NextResponse.json({ error: "turnstile verification failed" }, { status: 403 });
+    return withPublicPostCors(NextResponse.json({ error: "turnstile verification failed" }, { status: 403 }));
   }
 
   const withinLimit = await checkRateLimit("vote", await hashIp(ip));
   if (!withinLimit) {
-    return NextResponse.json({ error: "too many requests" }, { status: 429 });
+    return withPublicPostCors(NextResponse.json({ error: "too many requests" }, { status: 429 }));
   }
 
   const product = await getProductBySlug(productSlug);
   if (!product) {
-    return NextResponse.json({ error: "unknown product" }, { status: 404 });
+    return withPublicPostCors(NextResponse.json({ error: "unknown product" }, { status: 404 }));
   }
 
   const supabase = getSupabaseAdmin();
@@ -47,10 +48,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     .maybeSingle();
 
   if (feedbackError) {
-    return NextResponse.json({ error: "failed to load feedback" }, { status: 500 });
+    return withPublicPostCors(NextResponse.json({ error: "failed to load feedback" }, { status: 500 }));
   }
   if (!feedback || feedback.product_id !== product.id) {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
+    return withPublicPostCors(NextResponse.json({ error: "not found" }, { status: 404 }));
   }
 
   const { error: voteError } = await supabase
@@ -60,10 +61,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   if (voteError) {
     // 23505 = unique_violation，即 (feedback_id, voter_email) 已存在，见 docs/DATA_MODEL.md
     if (voteError.code === "23505") {
-      return NextResponse.json({ alreadyVoted: true }, { status: 200 });
+      return withPublicPostCors(NextResponse.json({ alreadyVoted: true }, { status: 200 }));
     }
-    return NextResponse.json({ error: "failed to vote" }, { status: 500 });
+    return withPublicPostCors(NextResponse.json({ error: "failed to vote" }, { status: 500 }));
   }
 
-  return NextResponse.json({ alreadyVoted: false }, { status: 201 });
+  return withPublicPostCors(NextResponse.json({ alreadyVoted: false }, { status: 201 }));
+}
+
+export async function OPTIONS() {
+  return publicPostCorsPreflight();
 }

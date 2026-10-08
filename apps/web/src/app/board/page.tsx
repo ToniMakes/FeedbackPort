@@ -13,7 +13,7 @@ export default async function BoardPage() {
 
   if (!productSlug) {
     return (
-      <p className="shell alert-error">未能识别产品——检查访问域名的子域名，或本地开发时的 DEFAULT_TENANT_SLUG 配置。</p>
+      <p className="shell alert-error">No product was identified for this board. Open the board URL configured for your product, or set DEFAULT_TENANT_SLUG for local development.</p>
     );
   }
 

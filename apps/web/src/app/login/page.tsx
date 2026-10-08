@@ -35,7 +35,7 @@ export default function LoginPage() {
         <div className="shell max-w-sm text-center">
           <div className="card page-enter">
             <p className="text-sm leading-6 text-slate-700">
-              登录链接已经发到 <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>，去邮箱里点一下。
+              A sign-in link was sent to <span className="font-medium text-slate-900 dark:text-slate-100">{email}</span>. Open it to continue.
             </p>
           </div>
         </div>
@@ -47,12 +47,12 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center">
       <div className="shell max-w-sm">
         <p className="eyebrow mb-3 text-center">FeedbackPort</p>
-        <h1 className="text-center">登录管理后台</h1>
-        <p className="mt-2 text-center text-sm text-slate-500">使用管理员邮箱接收一次性登录链接。</p>
+        <h1 className="text-center">Admin sign in</h1>
+        <p className="mt-2 text-center text-sm text-slate-500">Get a one-time sign-in link at your administrator email address.</p>
         <form onSubmit={handleSubmit} className="card page-enter mt-6 flex flex-col gap-4">
           <div>
             <label className="field-label" htmlFor="login-email">
-              邮箱
+              Email
             </label>
             <input
               id="login-email"
@@ -65,10 +65,10 @@ export default function LoginPage() {
             />
           </div>
           {status === "error" && (
-            <p className="alert-error">发送失败——确认这个邮箱已经在 Supabase 项目里建好管理员账号。</p>
+            <p className="alert-error">Could not send the link. Make sure this email is set up as an administrator in the Supabase project.</p>
           )}
           <button type="submit" disabled={status === "sending"} className="btn-primary">
-            {status === "sending" ? "发送中…" : "发送登录链接"}
+            {status === "sending" ? "Sending…" : "Send sign-in link"}
           </button>
         </form>
       </div>

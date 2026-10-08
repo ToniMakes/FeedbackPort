@@ -1,11 +1,11 @@
 import type { FeedbackStatus } from "@feedbackport/core";
 
 export const STATUS_LABELS: Record<FeedbackStatus, string> = {
-  open: "待处理",
-  planned: "已计划",
-  in_progress: "进行中",
-  done: "已完成",
-  declined: "不予采纳",
+  open: "Open",
+  planned: "Planned",
+  in_progress: "In progress",
+  done: "Done",
+  declined: "Declined",
 };
 
 export const STATUS_BADGE_CLASSES: Record<FeedbackStatus, string> = {

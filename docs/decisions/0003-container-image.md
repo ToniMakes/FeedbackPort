@@ -18,7 +18,7 @@
 - **`output: "standalone"` is opt-in via `NEXT_OUTPUT=standalone`**, set only inside the Dockerfile. Standalone tracing creates symlinks, which fails with `EPERM` on Windows without elevated rights (we hit this), and neither Vercel nor local `pnpm build` needs it. `outputFileTracingRoot` points at the repo root so workspace packages are traced into the image.
 - **`NEXT_PUBLIC_*` values are passed as Docker build args** (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`). They are public by design (they ship to every browser), so build args are acceptable here.
 - **Server secrets are injected at runtime only** (environment variables supplied by the orchestrator). They are not build args, are not copied into any layer, and `.dockerignore` excludes every `.env*` file except `.env.example`.
-- **`GET /api/health`** returns `{"status":"ok"}` and deliberately does not touch the database: a Supabase blip should not make the load balancer kill and restart healthy containers, and the endpoint must not leak internals. The image also declares a Docker `HEALTHCHECK` against it.
+- **`GET /api/health`** returns `{"status":"ok"}` without touching Supabase. Middleware also skips auth-session refresh for this path so the health check stays independent of Supabase. The ALB checks this endpoint. Docker and ECS container health checks are omitted: staging Fargate repeatedly marked tasks unhealthy even while the ALB reported their targets healthy. Reintroduce a container-level check only after that discrepancy is understood.
 
 ## Trade-offs
 
@@ -31,6 +31,7 @@
 - Container runs as `uid=1000(node)`; Docker health status reaches `healthy`; `/api/health` returns 200.
 - Runtime-only secrets passed with `docker run -e` were not found anywhere in the saved image; `docker history` shows no secret-like strings.
 - A public build arg (Turnstile site key) was found in the client bundle, confirming build-time inlining.
+- 2026-10-08 staging rollout: the ALB target stayed healthy after removing the container-level check; `/widget.js` returned 200 and the cross-origin feedback preflight returned 204.
 
 ---
 
@@ -54,7 +55,7 @@
 - **`output: "standalone"` 通过 `NEXT_OUTPUT=standalone` 按需开启**，只在 Dockerfile 里设置。standalone 追踪文件时要创建符号链接，在没有管理员权限的 Windows 上会报 `EPERM`（我们实际遇到了），而 Vercel 和本地 `pnpm build` 都不需要它。`outputFileTracingRoot` 指向仓库根，workspace 包才会被打进镜像。
 - **`NEXT_PUBLIC_*` 用 Docker 构建参数传入**（`NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`、`NEXT_PUBLIC_TURNSTILE_SITE_KEY`）。它们本来就是公开的（会发给每个浏览器），所以用构建参数可以接受。
 - **服务端密钥只在运行时注入**（由编排平台提供环境变量）。它们不是构建参数，不会进入任何镜像层，`.dockerignore` 排除除 `.env.example` 外的所有 `.env*` 文件。
-- **`GET /api/health`** 返回 `{"status":"ok"}`，刻意不查数据库：Supabase 抖一下不应该让负载均衡器把健康的容器杀掉重启，并且不能泄露内部信息。镜像同时声明了指向它的 Docker `HEALTHCHECK`。
+- **`GET /api/health`** 返回 `{"status":"ok"}`，不访问 Supabase。middleware 也跳过这个路径的登录态刷新，让存活检查不依赖 Supabase。ALB 会检查该接口。Docker 和 ECS 容器级健康检查暂时不配置：staging Fargate 曾反复将任务判为不健康，但 ALB 同时报告目标健康。查清这项差异后再恢复容器级检查。
 
 ## 取舍
 
@@ -67,3 +68,4 @@
 - 容器以 `uid=1000(node)` 运行；Docker 健康状态变为 `healthy`；`/api/health` 返回 200。
 - 用 `docker run -e` 传入的仅运行时密钥，在导出的镜像里搜不到；`docker history` 里没有疑似密钥的字符串。
 - 在前端 bundle 里找到了公开的构建参数（Turnstile site key），确认构建时内联。
+- 2026-10-08 staging 部署：移除容器级检查后 ALB 目标保持健康；`/widget.js` 返回 200，跨域反馈预检返回 204。

@@ -23,6 +23,7 @@ Add one line before `</body>`:
 ```html
 <script
   src="https://cdn.your-domain.com/widget.js"
+  data-api-base="https://feedback.your-domain.com"
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
   async
@@ -43,10 +44,12 @@ import { useEffect } from 'react';
 export function FeedbackWidget({
   productSlug,
   turnstileSiteKey,
+  apiBase,
   userEmail,
 }: {
   productSlug: string;
   turnstileSiteKey: string;
+  apiBase: string;
   userEmail?: string;
 }) {
   useEffect(() => {
@@ -55,16 +58,17 @@ export function FeedbackWidget({
     script.async = true;
     script.dataset.product = productSlug;
     script.dataset.turnstileSiteKey = turnstileSiteKey;
+    script.dataset.apiBase = apiBase;
     if (userEmail) script.dataset.userEmail = userEmail;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
-  }, [productSlug, turnstileSiteKey, userEmail]);
+  }, [productSlug, turnstileSiteKey, apiBase, userEmail]);
 
   return null;
 }
 ```
 
-Usage: `<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} userEmail={session?.user?.email} />`, dropped into the root layout to take effect site-wide.
+Usage: `<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} apiBase="https://feedback.your-domain.com" userEmail={session?.user?.email} />`, dropped into the root layout to take effect site-wide.
 
 ## Vue
 
@@ -72,7 +76,7 @@ Usage: `<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.
 <script setup lang="ts">
 import { onMounted } from 'vue';
 
-const props = defineProps<{ productSlug: string; turnstileSiteKey: string; userEmail?: string }>();
+const props = defineProps<{ productSlug: string; turnstileSiteKey: string; apiBase: string; userEmail?: string }>();
 
 onMounted(() => {
   const script = document.createElement('script');
@@ -80,6 +84,7 @@ onMounted(() => {
   script.async = true;
   script.dataset.product = props.productSlug;
   script.dataset.turnstileSiteKey = props.turnstileSiteKey;
+  script.dataset.apiBase = props.apiBase;
   if (props.userEmail) script.dataset.userEmail = props.userEmail;
   document.body.appendChild(script);
 });
@@ -104,6 +109,8 @@ https://<slug>.board.your-domain.com
 ```
 
 Feel free to drop this link straight into the product's "feedback" entry point, changelog footer, etc. — no extra deployment needed.
+
+For the current staging environment, the AI Agent Quota Dashboard board is at `https://aiqd.board.fp-staging.tonimakes.com/board`. The embeddable widget is served from `https://fp-staging.tonimakes.com/widget.js`; set `data-api-base` to `https://fp-staging.tonimakes.com` when embedding it on another site.
 
 ## About CORS
 
@@ -160,6 +167,7 @@ values ('cardwhisper', 'CardWhisper', '#6366f1');
 ```html
 <script
   src="https://cdn.你的域名.com/widget.js"
+  data-api-base="https://feedback.你的域名.com"
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
   async
@@ -180,10 +188,12 @@ import { useEffect } from 'react';
 export function FeedbackWidget({
   productSlug,
   turnstileSiteKey,
+  apiBase,
   userEmail,
 }: {
   productSlug: string;
   turnstileSiteKey: string;
+  apiBase: string;
   userEmail?: string;
 }) {
   useEffect(() => {
@@ -192,16 +202,17 @@ export function FeedbackWidget({
     script.async = true;
     script.dataset.product = productSlug;
     script.dataset.turnstileSiteKey = turnstileSiteKey;
+    script.dataset.apiBase = apiBase;
     if (userEmail) script.dataset.userEmail = userEmail;
     document.body.appendChild(script);
     return () => { document.body.removeChild(script); };
-  }, [productSlug, turnstileSiteKey, userEmail]);
+  }, [productSlug, turnstileSiteKey, apiBase, userEmail]);
 
   return null;
 }
 ```
 
-用法：`<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} userEmail={session?.user?.email} />`，放在根布局里即可全站生效。
+用法：`<FeedbackWidget productSlug="cardwhisper" turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!} apiBase="https://feedback.你的域名.com" userEmail={session?.user?.email} />`，放在根布局里即可全站生效。
 
 ## Vue
 
@@ -209,7 +220,7 @@ export function FeedbackWidget({
 <script setup lang="ts">
 import { onMounted } from 'vue';
 
-const props = defineProps<{ productSlug: string; turnstileSiteKey: string; userEmail?: string }>();
+const props = defineProps<{ productSlug: string; turnstileSiteKey: string; apiBase: string; userEmail?: string }>();
 
 onMounted(() => {
   const script = document.createElement('script');
@@ -217,6 +228,7 @@ onMounted(() => {
   script.async = true;
   script.dataset.product = props.productSlug;
   script.dataset.turnstileSiteKey = props.turnstileSiteKey;
+  script.dataset.apiBase = props.apiBase;
   if (props.userEmail) script.dataset.userEmail = props.userEmail;
   document.body.appendChild(script);
 });
@@ -239,6 +251,8 @@ onMounted(() => {
 ```
 https://<slug>.board.你的域名.com
 ```
+
+当前 staging 环境的 AI Agent Quota Dashboard 面板地址是 `https://aiqd.board.fp-staging.tonimakes.com/board`。可嵌入的 widget 从 `https://fp-staging.tonimakes.com/widget.js` 提供；嵌入其他网站时将 `data-api-base` 设为 `https://fp-staging.tonimakes.com`。
 
 可以直接把这个链接放进产品的"意见反馈"入口、更新日志页脚等位置，不需要额外部署。
 

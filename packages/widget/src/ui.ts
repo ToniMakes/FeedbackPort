@@ -107,20 +107,20 @@ export function mountWidget(
         .fh-button, .fh-panel, .fh-panel button[type="submit"] { transition: none !important; }
       }
     </style>
-    <button class="fh-button" type="button">💬 反馈</button>
+    <button class="fh-button" type="button">💬 Feedback</button>
     <form class="fh-panel">
       <div class="fh-header">
-        <p class="fh-title">有想法？说给我们听</p>
-        <button class="fh-close" type="button" aria-label="关闭">×</button>
+        <p class="fh-title">Share your feedback</p>
+        <button class="fh-close" type="button" aria-label="Close">×</button>
       </div>
       <div class="fh-body">
-        <input name="title" placeholder="一句话描述你的想法" required maxlength="120" />
-        <textarea name="body" placeholder="更多细节（选填）" maxlength="2000"></textarea>
-        <input name="submitterEmail" type="email" placeholder="你的邮箱" required value="${config.userEmail ?? ""}" />
+        <input name="title" placeholder="Summarize your idea" required maxlength="120" />
+        <textarea name="body" placeholder="More details (optional)" maxlength="2000"></textarea>
+        <input name="submitterEmail" type="email" placeholder="Your email" required value="${config.userEmail ?? ""}" />
         <input class="fh-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" />
         <div class="fh-turnstile"></div>
         <p class="fh-error"></p>
-        <button type="submit">提交</button>
+        <button type="submit">Submit feedback</button>
       </div>
     </form>
   `;
@@ -160,7 +160,7 @@ export function mountWidget(
     event.preventDefault();
     errorEl.classList.remove("fh-visible");
     submitButton.disabled = true;
-    submitButton.textContent = "提交中…";
+    submitButton.textContent = "Submitting…";
 
     const formData = new FormData(panel);
     void onSubmit({
@@ -174,12 +174,12 @@ export function mountWidget(
         panel.reset();
       })
       .catch(() => {
-        errorEl.textContent = "提交失败，请重试";
+        errorEl.textContent = "Submission failed. Please try again.";
         errorEl.classList.add("fh-visible");
       })
       .finally(() => {
         submitButton.disabled = false;
-        submitButton.textContent = "提交";
+        submitButton.textContent = "Submit feedback";
       });
   });
 

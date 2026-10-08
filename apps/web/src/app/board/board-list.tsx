@@ -42,24 +42,24 @@ export function BoardList({ productSlug }: { productSlug: string }) {
     <main className="shell page-enter">
       <header className="mb-6">
         <p className="eyebrow mb-2">{productSlug}</p>
-        <h1 className="text-3xl">反馈面板</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">有想法？告诉我们，投票支持你关心的功能。</p>
+        <h1 className="text-3xl">Feedback board</h1>
+        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Have an idea? Share it and vote for the features you care about.</p>
       </header>
 
       <SubmitForm productSlug={productSlug} onSubmitted={load} />
 
       <div className="mt-10 mb-3 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-base">用户想法</h2>
-          <p className="mt-1 text-sm text-slate-500">投票支持你最关心的反馈。</p>
+          <h2 className="text-base">Ideas</h2>
+          <p className="mt-1 text-sm text-slate-500">Vote for the feedback that matters most to you.</p>
         </div>
         <select
           className="select w-auto"
-          aria-label="按反馈状态筛选"
+          aria-label="Filter feedback by status"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
         >
-          <option value="">全部状态</option>
+          <option value="">All statuses</option>
           {FEEDBACK_STATUSES.map((status) => (
             <option key={status} value={status}>
               {statusLabel(status)}
@@ -69,10 +69,10 @@ export function BoardList({ productSlug }: { productSlug: string }) {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
+        <p className="py-8 text-center text-sm text-slate-400">Loading…</p>
       ) : items.length === 0 ? (
         <p className="card py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          还没有反馈，来提第一条吧。
+          No feedback yet. Be the first to share an idea.
         </p>
       ) : (
         <ul className="flex flex-col">
@@ -91,7 +91,7 @@ export function BoardList({ productSlug }: { productSlug: string }) {
               </div>
               <div className="flex shrink-0 flex-col items-end gap-2">
                 <span className="text-sm font-medium text-slate-500">
-                  {item.votes?.[0]?.count ?? 0} 票
+                  {item.votes?.[0]?.count ?? 0} votes
                 </span>
                 <VoteButton productSlug={productSlug} feedbackId={item.id} onVoted={load} />
               </div>
@@ -117,7 +117,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
     event.preventDefault();
 
     if (!TURNSTILE_SITE_KEY || !turnstileContainerRef.current) {
-      setError("Turnstile 未配置（NEXT_PUBLIC_TURNSTILE_SITE_KEY），无法提交");
+      setError("Turnstile is not configured (NEXT_PUBLIC_TURNSTILE_SITE_KEY), so feedback cannot be submitted.");
       return;
     }
 
@@ -144,7 +144,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
       setBody("");
       onSubmitted();
     } catch {
-      setError("提交失败，稍后再试");
+      setError("Submission failed. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -152,20 +152,20 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
 
   return (
     <form onSubmit={handleSubmit} className="card flex flex-col gap-3">
-      <h2>有想法？说给我们听</h2>
+      <h2>Share an idea</h2>
       <input
         required
         maxLength={120}
-        aria-label="一句话描述你的想法"
-        placeholder="一句话描述你的想法"
+        aria-label="Summarize your idea"
+        placeholder="Summarize your idea"
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         className="input"
       />
       <textarea
         maxLength={2000}
-        aria-label="更多细节（选填）"
-        placeholder="更多细节（选填）"
+        aria-label="More details (optional)"
+        placeholder="More details (optional)"
         value={body}
         onChange={(event) => setBody(event.target.value)}
         className="textarea"
@@ -173,8 +173,8 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
       <input
         required
         type="email"
-        aria-label="你的邮箱"
-        placeholder="你的邮箱"
+        aria-label="Your email"
+        placeholder="Your email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         className="input"
@@ -182,7 +182,7 @@ function SubmitForm({ productSlug, onSubmitted }: { productSlug: string; onSubmi
       <div ref={turnstileContainerRef} />
       {error && <p className="alert-error">{error}</p>}
       <button type="submit" disabled={submitting} className="btn-primary self-start">
-        {submitting ? "提交中…" : "提交"}
+        {submitting ? "Submitting…" : "Submit"}
       </button>
     </form>
   );

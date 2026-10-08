@@ -19,7 +19,7 @@ COPY apps/web/package.json apps/web/package.json
 COPY packages/core/package.json packages/core/package.json
 COPY packages/widget/package.json packages/widget/package.json
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile --filter @feedbackport/web...
+    pnpm install --frozen-lockfile --filter @feedbackport/web... --filter @feedbackport/widget...
 
 # ---- build
 FROM deps AS build
@@ -33,7 +33,11 @@ ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL \
     NEXT_TELEMETRY_DISABLED=1
 COPY tsconfig.base.json ./
 COPY packages/core packages/core
+COPY packages/widget packages/widget
 COPY apps/web apps/web
+RUN pnpm --filter @feedbackport/widget build \
+    && mkdir -p apps/web/public \
+    && cp packages/widget/dist/widget.js apps/web/public/widget.js
 RUN pnpm --filter @feedbackport/web build
 
 # ---- runtime: only the traced standalone output, as a non-root user
@@ -45,8 +49,7 @@ ENV NODE_ENV=production \
     PORT=3000
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
 COPY --from=build --chown=node:node /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build --chown=node:node /repo/apps/web/public ./apps/web/public
 USER node
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=3s --start-period=15s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 CMD ["node", "apps/web/server.js"]

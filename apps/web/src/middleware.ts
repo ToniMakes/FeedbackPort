@@ -29,7 +29,9 @@ export async function middleware(request: NextRequest) {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   // 没配 Supabase 环境变量时静默跳过，不影响纯租户路由的本地开发
-  if (supabaseUrl && supabaseAnonKey) {
+  const isHealthCheck = request.nextUrl.pathname === "/api/health";
+  const isCorsPreflight = request.method === "OPTIONS";
+  if (supabaseUrl && supabaseAnonKey && !isHealthCheck && !isCorsPreflight) {
     const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll() {

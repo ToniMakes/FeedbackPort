@@ -52,7 +52,7 @@ export function VoteButton({
   if (!open) {
     return (
       <button type="button" onClick={() => setOpen(true)} className="btn-secondary">
-        ▲ 投票
+        ▲ Vote
       </button>
     );
   }
@@ -62,14 +62,14 @@ export function VoteButton({
       <input
         type="email"
         required
-        aria-label="你的邮箱（用于去重，不公开展示）"
-        placeholder="你的邮箱（用于去重，不公开展示）"
+        aria-label="Your email (used to prevent duplicate votes; not shown publicly)"
+        placeholder="Your email (used to prevent duplicate votes; not shown publicly)"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         className="input"
       />
       <div ref={turnstileContainerRef} />
-      {status === "error" && <p className="alert-error">投票失败，请重试</p>}
+      {status === "error" && <p className="alert-error">Vote failed. Please try again.</p>}
       <div className="flex gap-2">
         <button
           type="button"
@@ -77,10 +77,10 @@ export function VoteButton({
           onClick={() => void handleVote()}
           className="btn-primary flex-1"
         >
-          {status === "verifying" ? "验证中…" : "确认投票"}
+          {status === "verifying" ? "Verifying…" : "Confirm vote"}
         </button>
         <button type="button" onClick={() => setOpen(false)} className="btn-ghost">
-          取消
+          Cancel
         </button>
       </div>
     </div>

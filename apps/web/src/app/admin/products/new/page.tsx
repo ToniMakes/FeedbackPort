@@ -26,7 +26,7 @@ export default function NewProductPage() {
 
     if (!res.ok) {
       const data = await res.json().catch(() => null);
-      setError(res.status === 409 ? "这个 slug 已经被用过了" : (data?.error ?? "创建失败"));
+      setError(res.status === 409 ? "That slug is already in use." : (data?.error ?? "Could not create product."));
       return;
     }
 
@@ -36,31 +36,31 @@ export default function NewProductPage() {
   return (
     <main className="shell page-enter max-w-lg">
       <p className="eyebrow mb-2">Workspace</p>
-      <h1 className="text-3xl">新增产品</h1>
-      <p className="mt-2 text-sm text-slate-500">为一个产品创建独立的反馈入口。</p>
+      <h1 className="text-3xl">Add a product</h1>
+      <p className="mt-2 text-sm text-slate-500">Create a dedicated feedback board for a product.</p>
       <form onSubmit={handleSubmit} className="card mt-6 flex flex-col gap-4">
         <div>
           <label className="field-label" htmlFor="product-slug">
-            产品标识（Slug）
+            Product slug
           </label>
           <input
             id="product-slug"
             required
-            placeholder="如 cardwhisper，只能小写字母数字连字符"
+            placeholder="e.g. cardwhisper"
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
             className="input"
           />
-          <p className="mt-1.5 text-xs text-slate-500">用于公开反馈面板地址，只能使用小写字母、数字和连字符。</p>
+          <p className="mt-1.5 text-xs text-slate-500">Used in the public board URL. Use lowercase letters, numbers, and hyphens.</p>
         </div>
         <div>
           <label className="field-label" htmlFor="product-name">
-            产品名称
+            Product name
           </label>
           <input
             id="product-name"
             required
-            placeholder="产品名称"
+            placeholder="Product name"
             value={name}
             onChange={(event) => setName(event.target.value)}
             className="input"
@@ -68,7 +68,7 @@ export default function NewProductPage() {
         </div>
         <div>
           <label className="field-label" htmlFor="product-color">
-            品牌色
+            Brand color
           </label>
           <div className="flex items-center gap-3">
             <input
@@ -83,7 +83,7 @@ export default function NewProductPage() {
         </div>
         {error && <p className="alert-error">{error}</p>}
         <button type="submit" disabled={submitting} className="btn-primary self-start">
-          {submitting ? "创建中…" : "创建"}
+          {submitting ? "Creating…" : "Create product"}
         </button>
       </form>
     </main>

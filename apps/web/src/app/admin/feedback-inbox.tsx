@@ -68,20 +68,20 @@ export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
       <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row">
         {!productSlug && (
           <input
-            aria-label="按产品 slug 筛选"
-            placeholder="按 product slug 筛选（留空 = 全部产品）"
+            aria-label="Filter by product slug"
+            placeholder="Filter by product slug (blank = all products)"
             value={productFilter}
             onChange={(event) => setProductFilter(event.target.value)}
             className="input sm:max-w-xs"
           />
         )}
         <select
-          aria-label="按反馈状态筛选"
+          aria-label="Filter feedback by status"
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
           className="select sm:w-auto"
         >
-          <option value="">全部状态</option>
+          <option value="">All statuses</option>
           {FEEDBACK_STATUSES.map((status) => (
             <option key={status} value={status}>
               {statusLabel(status)}
@@ -91,9 +91,9 @@ export function FeedbackInbox({ productSlug }: { productSlug?: string }) {
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
+        <p className="py-8 text-center text-sm text-slate-400">Loading…</p>
       ) : items.length === 0 ? (
-        <p className="mt-8 border-y border-slate-200 py-10 text-center text-sm text-slate-500">没有匹配的反馈。</p>
+        <p className="mt-8 border-y border-slate-200 py-10 text-center text-sm text-slate-500">No matching feedback.</p>
       ) : (
         <ul className="mt-6 flex flex-col">
           {items.map((item) => (
@@ -121,12 +121,12 @@ function FeedbackRow({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-medium text-slate-900 dark:text-slate-100">{item.title}</p>
-          <p className="mt-1 text-xs text-slate-500">{item.submitter_email} · {new Date(item.created_at).toLocaleDateString("zh-CN")}</p>
+          <p className="mt-1 text-xs text-slate-500">{item.submitter_email} · {new Date(item.created_at).toLocaleDateString("en-AU")}</p>
         </div>
         <div className="flex items-center gap-2">
           <StatusBadge status={item.status} />
           <select
-            aria-label={`更改“${item.title}”的状态`}
+            aria-label={`Change status for “${item.title}”`}
             value={item.status}
             onChange={(event) => onStatusChange(item.id, event.target.value)}
             className="select w-auto py-1.5 text-xs"
@@ -144,10 +144,10 @@ function FeedbackRow({
 
       <div className="mt-4 flex flex-col gap-2 border-t border-slate-100 pt-3 sm:flex-row">
         <textarea
-          aria-label={`回复“${item.title}”`}
+          aria-label={`Reply to “${item.title}”`}
           value={replyBody}
           onChange={(event) => setReplyBody(event.target.value)}
-          placeholder="写回复…"
+          placeholder="Write a reply…"
           className="textarea min-h-16 flex-1"
         />
         <button
@@ -158,7 +158,7 @@ function FeedbackRow({
           }}
           className="btn-primary self-end sm:self-end"
         >
-          回复
+          Reply
         </button>
       </div>
     </li>

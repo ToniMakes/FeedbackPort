@@ -15,6 +15,8 @@ All public endpoints uniformly also require a Turnstile token.
 
 ### `POST /api/feedback` — submit feedback (called by the widget, cross-origin)
 
+This endpoint supports cross-origin widget requests. `OPTIONS` preflight requests return `204`; `POST` responses (including validation and error responses) include the public CORS headers. Credentials are not used.
+
 Request body:
 
 ```ts
@@ -39,6 +41,8 @@ Response: `201 { id, status: 'open' }`
 - Returns a paginated list; each item includes a vote count (aggregate query) and the latest reply's summary
 
 ### `POST /api/feedback/:id/vote` — vote
+
+This endpoint supports the same cross-origin widget flow: `OPTIONS` returns `204`, and all `POST` responses include the public CORS headers.
 
 Request body: `{ productSlug: string; voterEmail: string; turnstileToken: string }`
 
@@ -77,6 +81,7 @@ How a host page embeds it:
 ```html
 <script
   src="https://cdn.domain.com/widget.js"
+  data-api-base="https://feedback.domain.com"
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
   data-user-email="user@example.com"
@@ -85,6 +90,7 @@ How a host page embeds it:
 ```
 
 - `data-product`: required, corresponds to `products.slug`
+- `data-api-base`: optional API origin. Defaults to the widget script's origin; set it when the widget script is hosted on a separate CDN or domain from the FeedbackPort API.
 - `data-turnstile-site-key`: required, your Cloudflare Turnstile site key. For local development, Cloudflare publishes a well-known test key that always passes — `1x00000000000000000000AA` — so you don't need a real Cloudflare account to try the widget end to end
 - `data-user-email`: optional — the host product's logged-in user's email, pre-fills the submission form so the user doesn't have to type it again (this is a lightweight substitute for a real SSO integration; the host page decides whether to pass it, and the widget performs no identity verification on it)
 
@@ -132,6 +138,8 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 
 ### `POST /api/feedback` 提交反馈（widget 调用，跨域）
 
+该端点支持 widget 跨域调用：`OPTIONS` 预检返回 `204`，`POST` 的成功和错误响应都会带公开 CORS 响应头；请求不使用凭证。
+
 请求体：
 
 ```ts
@@ -156,6 +164,8 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 - 返回分页列表，每项含投票数（聚合查询）、最新一条回复摘要
 
 ### `POST /api/feedback/:id/vote` 投票
+
+该端点支持同样的 widget 跨域调用：`OPTIONS` 返回 `204`，`POST` 的所有响应都会带公开 CORS 响应头。
 
 请求体：`{ productSlug: string; voterEmail: string; turnstileToken: string }`
 
@@ -194,6 +204,7 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 ```html
 <script
   src="https://cdn.域名.com/widget.js"
+  data-api-base="https://feedback.域名.com"
   data-product="cardwhisper"
   data-turnstile-site-key="1x00000000000000000000AA"
   data-user-email="user@example.com"
@@ -202,6 +213,7 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 ```
 
 - `data-product`：必填，对应 `products.slug`
+- `data-api-base`：选填，API 的 origin。默认使用 widget 脚本所在的 origin；当脚本托管在与 FeedbackPort API 不同的 CDN 或域名时，需要显式设置。
 - `data-turnstile-site-key`：必填，你的 Cloudflare Turnstile site key。本地开发不需要真实 Cloudflare 账号——Cloudflare 官方发布了一个永远通过验证的测试 key：`1x00000000000000000000AA`，用这个就能把 widget 端到端跑通
 - `data-user-email`：选填，宿主产品已登录用户的邮箱，预填提交表单，免去用户重复输入（这是替代真正 SSO 集成的轻量方案，宿主页面自行决定是否传递，widget 不做身份校验）
 

@@ -6,12 +6,12 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata = {
   title: "FeedbackPort",
-  description: "面向独立开发者的多产品用户反馈管理系统",
+  description: "A lightweight feedback platform for independent developers to collect ideas, gather votes, and manage feedback across products.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="zh-CN" className={inter.variable}>
+    <html lang="en" className={inter.variable}>
       <body className="font-sans">{children}</body>
     </html>
   );

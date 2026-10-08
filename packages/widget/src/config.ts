@@ -8,8 +8,6 @@ export interface WidgetConfig {
   turnstileSiteKey: string;
 }
 
-const DEFAULT_API_BASE = "https://api.feedbackport.example.com";
-
 export class WidgetConfigError extends Error {}
 
 export function readConfig(script: HTMLOrSVGScriptElement | null): WidgetConfig {
@@ -29,10 +27,14 @@ export function readConfig(script: HTMLOrSVGScriptElement | null): WidgetConfig 
     throw new WidgetConfigError("缺少必填的 data-turnstile-site-key 属性，见 docs/INTEGRATION.md");
   }
 
+  const scriptElement = script as HTMLScriptElement;
+  const configuredApiBase = scriptElement.dataset.apiBase?.trim();
+  const scriptOrigin = new URL(scriptElement.src || window.location.href, window.location.href).origin;
+
   return {
     productSlug,
-    userEmail: (script as HTMLScriptElement).dataset.userEmail || undefined,
-    apiBase: (script as HTMLScriptElement).dataset.apiBase || DEFAULT_API_BASE,
+    userEmail: scriptElement.dataset.userEmail || undefined,
+    apiBase: (configuredApiBase || (scriptOrigin === "null" ? "" : scriptOrigin)).replace(/\/$/, ""),
     turnstileSiteKey,
   };
 }

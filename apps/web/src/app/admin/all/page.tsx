@@ -8,11 +8,11 @@ export default function AdminAllFeedbackPage() {
   return (
     <main className="shell-wide page-enter">
       <Link href="/admin" className="link text-sm">
-        ← 返回产品列表
+        ← Back to products
       </Link>
       <p className="eyebrow mt-5 mb-2">Workspace inbox</p>
-      <h1 className="text-3xl">跨产品全部反馈</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">默认聚合所有产品的反馈，无需逐个登录切换。</p>
+      <h1 className="text-3xl">All feedback</h1>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Feedback from every product, together in one inbox.</p>
 
       <div className="mt-6">
         <FeedbackInbox />

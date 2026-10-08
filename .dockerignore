@@ -23,7 +23,6 @@
 # not needed to build the web app
 docs
 supabase
-packages/widget/src
 *.md
 Dockerfile
 .dockerignore

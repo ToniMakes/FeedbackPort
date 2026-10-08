@@ -35,21 +35,21 @@ export default function AdminProductsPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="eyebrow mb-2">Workspace</p>
-          <h1 className="text-3xl">产品</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">选一个产品查看它的反馈。</p>
+          <h1 className="text-3xl">Products</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Choose a product to view its feedback.</p>
         </div>
         <Link href="/admin/all" className="link shrink-0 text-sm">
-          跨产品全部反馈 →
+          All feedback →
         </Link>
       </div>
 
       {loading ? (
-        <p className="py-8 text-center text-sm text-slate-400">加载中…</p>
+        <p className="py-8 text-center text-sm text-slate-400">Loading…</p>
       ) : items.length === 0 ? (
         <div className="card mt-6 text-center">
-          <p className="text-sm text-slate-500 dark:text-slate-400">还没有产品。</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">No products yet.</p>
           <Link href="/admin/products/new" className="btn-primary mt-4 inline-flex">
-            + 新增产品
+            + Add product
           </Link>
         </div>
       ) : (
@@ -81,15 +81,15 @@ function ProductCard({ product }: { product: ProductStat }) {
       <div className="mt-4 flex flex-wrap items-center gap-2">
         {product.openCount > 0 && (
           <span className="badge bg-indigo-50 text-indigo-700">
-            {product.openCount} 条待处理
+            {product.openCount} open
           </span>
         )}
-        <span className="text-xs text-slate-400">共 {product.totalCount} 条反馈</span>
+        <span className="text-xs text-slate-400">{product.totalCount} total</span>
       </div>
 
       {product.latestFeedback && (
         <p className="mt-3 truncate border-t border-slate-100 pt-3 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">
-          最新：{product.latestFeedback.title}
+          Latest: {product.latestFeedback.title}
         </p>
       )}
     </Link>

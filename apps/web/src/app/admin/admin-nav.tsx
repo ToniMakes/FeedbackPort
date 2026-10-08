@@ -20,14 +20,14 @@ export function AdminNav() {
           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
             F
           </span>
-          FeedbackPort 管理后台
+          FeedbackPort Admin
         </Link>
         <nav className="flex items-center gap-1 text-sm">
           <Link href="/admin/products/new" className="btn-ghost">
-            + 新增产品
+            + Add product
           </Link>
           <button type="button" onClick={() => void handleSignOut()} className="btn-ghost">
-            退出登录
+            Sign out
           </button>
         </nav>
       </div>

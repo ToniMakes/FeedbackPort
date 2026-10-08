@@ -45,21 +45,21 @@ export function BoardDetail({ feedbackId, productSlug }: { feedbackId: string; p
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedbackId]);
 
-  if (loading) return <p className="shell py-8 text-center text-sm text-slate-400">加载中…</p>;
+  if (loading) return <p className="shell py-8 text-center text-sm text-slate-400">Loading…</p>;
   if (notFound || !item)
-    return <p className="shell py-8 text-center text-sm text-slate-500 dark:text-slate-400">没找到这条反馈。</p>;
+    return <p className="shell py-8 text-center text-sm text-slate-500 dark:text-slate-400">Feedback not found.</p>;
 
   return (
     <main className="shell page-enter">
       <Link href="/board" className="link text-sm">
-        ← 返回列表
+        ← Back to board
       </Link>
 
       <article className="mt-5 border-y border-slate-200 py-6 sm:py-8">
         <h1 className="text-3xl leading-tight">{item.title}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
           <StatusBadge status={item.status} />
-          <span>提交者：{item.submitter_email}</span>
+          <span>Submitted by: {item.submitter_email}</span>
         </div>
         {item.body && <p className="mt-5 whitespace-pre-wrap leading-7 text-slate-700">{item.body}</p>}
         <div className="mt-4">
@@ -67,9 +67,9 @@ export function BoardDetail({ feedbackId, productSlug }: { feedbackId: string; p
         </div>
       </article>
 
-      <h2 className="mt-8 mb-3">回复</h2>
+      <h2 className="mt-8 mb-3">Replies</h2>
       {item.replies.length === 0 ? (
-        <p className="card text-sm text-slate-500 dark:text-slate-400">还没有回复。</p>
+        <p className="card text-sm text-slate-500 dark:text-slate-400">No replies yet.</p>
       ) : (
         <ul className="flex flex-col divide-y divide-slate-200 border-y border-slate-200">
           {item.replies.map((reply) => (
@@ -83,7 +83,7 @@ export function BoardDetail({ feedbackId, productSlug }: { feedbackId: string; p
             >
               {reply.is_admin && (
                   <span className="badge mb-2 bg-indigo-50 text-indigo-700">
-                  官方回复
+                  Official reply
                 </span>
               )}
               <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">{reply.body}</p>
