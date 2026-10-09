@@ -95,52 +95,28 @@ create index idx_replies_feedback on replies(feedback_id);
 
 > Rate limiting doesn't live in a Postgres table — it uses Upstash Redis sliding-window counters (see the anti-abuse design in ARCHITECTURE.md), avoiding the need for an extra data-cleanup job.
 
-## Row Level Security policies
+## Row Level Security and grants
+
+The `anon` and `authenticated` roles have **no** privileges on `products`, `feedback`, `votes` or `replies`. RLS is enabled on all four tables with no policies, so access is denied by default. The application never queries these tables as `anon`: board, widget and admin requests all go through API Routes that use the service-role key (see ARCHITECTURE.md, "Security boundaries"), and the Supabase browser/server clients are used for admin authentication only.
+
+Earlier migrations (0001/0002) granted `anon` read access and a restricted insert on `feedback` and `votes`. That exposed `submitter_email` / `voter_email` to anyone holding the public anon key, and let direct PostgREST inserts skip Turnstile and rate limiting. Migration `20261009000000_revoke_anon_data_access.sql` removes those policies and grants. See [ADR 0007](decisions/0007-revoke-anon-data-access.md).
 
 ```sql
 alter table feedback enable row level security;
 alter table votes enable row level security;
 alter table replies enable row level security;
+alter table products enable row level security;
+-- no policies: default deny for every role without BYPASSRLS
 
--- the anonymous role can read all feedback (board/widget filter by product_id in the application layer)
-create policy "anon can read feedback" on feedback
-  for select using (true);
-
--- the anonymous role can only insert, never change status / duplicate_of
-create policy "anon can submit feedback" on feedback
-  for insert with check (true);
-
--- status changes and dedup assignment can only be done by the service role (simply don't grant anon an update policy)
-
-create policy "anon can read votes" on votes
-  for select using (true);
-
-create policy "anon can vote" on votes
-  for insert with check (true);
-
-create policy "anon can read replies" on replies
-  for select using (true);
-
--- writing an admin reply (is_admin = true) has no anon policy — only the service role can do it
-```
-
-## Grants
-
-RLS policies decide *which rows* a role can touch; they don't grant access to the table at all — that's a separate, more basic Postgres permission. Some Supabase project configurations don't automatically grant `service_role` privileges on newly created tables, which shows up as `permission denied for table X` even though `service_role` is supposed to bypass RLS entirely. This must run after the tables exist:
-
-```sql
 grant usage on schema public to service_role, anon, authenticated;
-
 grant all on all tables in schema public to service_role;
 grant all on all sequences in schema public to service_role;
-
--- anon/authenticated privileges mirror the RLS policies above:
--- read everything, insert into feedback/votes, never change status or write an admin reply
-grant select on public.products to anon, authenticated;
-grant select, insert on public.feedback to anon, authenticated;
-grant select, insert on public.votes to anon, authenticated;
-grant select on public.replies to anon, authenticated;
+-- nothing is granted to anon/authenticated on the data tables
 ```
+
+RLS policies decide *which rows* a role can touch; GRANT decides whether it can touch the table at all. Some Supabase project configurations don't automatically grant `service_role` privileges on newly created tables, which shows up as `permission denied for table X`, so the `service_role` grants stay explicit. The migration also revokes the default `anon`/`authenticated` privileges for future tables in `public`, so a new table is private until a migration deliberately opens it.
+
+Regression test: `npx supabase test db` runs `supabase/tests/database/anon_access.test.sql`.
 
 ## Additional field notes
 
@@ -247,52 +223,28 @@ create index idx_replies_feedback on replies(feedback_id);
 
 > 频率限制不落 Postgres 表，走 Upstash Redis 的滑动窗口计数（见 ARCHITECTURE.md 防刷设计），避免为限流引入额外的数据清理任务。
 
-## Row Level Security 策略
+## 行级安全与权限授予
+
+`anon` 和 `authenticated` 角色对 `products`、`feedback`、`votes`、`replies` **没有任何权限**。四张表都开启了 RLS 且不设任何 policy，默认拒绝。应用从不以 `anon` 身份查询这些表：面板、嵌入组件和管理后台的请求全部经由使用 service-role 密钥的 API Route（见 ARCHITECTURE.md "安全边界"），Supabase 的浏览器端/服务端 client 只用于管理员登录认证。
+
+早期迁移（0001/0002）曾给 `anon` 开放 `feedback`、`votes` 的读取和受限插入。这会让任何持有公开 anon key 的人读到 `submitter_email` / `voter_email`，也能绕过 Turnstile 和限流，直接通过 PostgREST 写入数据。迁移 `20261009000000_revoke_anon_data_access.sql` 移除了这些 policy 和授权，见 [ADR 0007](decisions/0007-revoke-anon-data-access.md)。
 
 ```sql
 alter table feedback enable row level security;
 alter table votes enable row level security;
 alter table replies enable row level security;
+alter table products enable row level security;
+-- 不设任何 policy：没有 BYPASSRLS 的角色一律默认拒绝
 
--- 匿名角色可读所有反馈（board/widget 用 product_id 在应用层过滤租户）
-create policy "anon can read feedback" on feedback
-  for select using (true);
-
--- 匿名角色只能插入，不能改 status / duplicate_of
-create policy "anon can submit feedback" on feedback
-  for insert with check (true);
-
--- 状态变更、判重指派只能由 service-role 执行（不给 anon 开 update 策略即可）
-
-create policy "anon can read votes" on votes
-  for select using (true);
-
-create policy "anon can vote" on votes
-  for insert with check (true);
-
-create policy "anon can read replies" on replies
-  for select using (true);
-
--- 写入管理员回复（is_admin = true）不给 anon 开策略，只能 service-role 执行
-```
-
-## 权限授予（GRANT）
-
-RLS policy 决定的是"这个角色能碰哪些行"，跟"这个角色能不能碰这张表"是两回事，后者是更基础的 Postgres 权限。有些 Supabase 项目配置下，新建的表不会自动给 `service_role` 授权，即便 `service_role` 理论上应该绕过 RLS——症状是报 `permission denied for table X`。建表之后要补跑这个：
-
-```sql
 grant usage on schema public to service_role, anon, authenticated;
-
 grant all on all tables in schema public to service_role;
 grant all on all sequences in schema public to service_role;
-
--- anon/authenticated 的权限跟上面的 RLS policy 对应：
--- 能读全部、能插入 feedback/votes，不能改 status、不能写管理员回复
-grant select on public.products to anon, authenticated;
-grant select, insert on public.feedback to anon, authenticated;
-grant select, insert on public.votes to anon, authenticated;
-grant select on public.replies to anon, authenticated;
+-- 不给 anon/authenticated 授予数据表上的任何权限
 ```
+
+RLS policy 决定"这个角色能碰哪些行"，GRANT 决定"这个角色能不能碰这张表"。有些 Supabase 项目配置下，新建的表不会自动给 `service_role` 授权，症状是报 `permission denied for table X`，所以 `service_role` 的授权保持显式写出。迁移还撤销了 `public` schema 里今后新建表默认授予 `anon`/`authenticated` 的权限，新表在迁移明确开放之前都是私有的。
+
+回归测试：`npx supabase test db` 会运行 `supabase/tests/database/anon_access.test.sql`。
 
 ## 字段说明补充
 
