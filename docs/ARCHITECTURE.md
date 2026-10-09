@@ -93,7 +93,7 @@ The admin console's default view is "all products" — it aggregates feedback ac
 
 ## Security boundaries
 
-- **RLS (Row Level Security)**: `feedback`/`votes`/`replies` expose only `select` and a restricted `insert` to the anonymous role (it cannot change `status` or insert a reply with `is_admin=true`). Status changes and admin replies can only go through the service-role key (held only by server-side API Routes). The permission boundary lives at the data layer, not just behind a hidden button in the UI.
+- **Data-layer access (RLS + GRANT)**: the `anon` and `authenticated` roles have no privileges on `products`/`feedback`/`votes`/`replies`, and RLS is enabled with no policies, so the public anon key cannot read emails or insert rows directly through PostgREST (which would skip Turnstile and rate limiting). Every read and write goes through server-side API Routes holding the service-role key. The permission boundary lives at the data layer, not just behind a hidden button in the UI. `supabase/tests/database/anon_access.test.sql` guards this; see [ADR 0007](decisions/0007-revoke-anon-data-access.md).
 - **Three-layer anti-abuse**: honeypot field (catches naive scripts) → Turnstile (catches automated tools) → IP rate limiting (catches high-frequency requests that get past the first two). The three layers are independent middleware functions — any one of them can be disabled or swapped out without affecting the other two.
 - **`notify-submitter` shared-secret auth**: this Edge Function has Supabase's own JWT verification turned off (the newer `sb_secret_`/`sb_publishable_` key format isn't a legacy-secret-signed JWT, so that check doesn't work here — see the deployment note in API.md), so it checks its own `x-webhook-secret` header against a `WEBHOOK_SECRET` env var instead. Without this, the function's public URL would accept a forged payload from anyone who found it, turning the Resend account into an open relay.
 
@@ -194,6 +194,6 @@ sequenceDiagram
 
 ## 安全边界
 
-- **RLS（Row Level Security）**：`feedback`/`votes`/`replies` 对匿名角色只开放 `select` 和受限的 `insert`（不能改 `status`、不能插入 `is_admin=true` 的回复），改状态和写管理员回复只能通过 service-role 密钥（仅服务端 API Route 持有）执行。权限边界下沉到数据层，而不是只靠前端隐藏按钮。
+- **数据层访问控制（RLS + GRANT）**：`anon` 和 `authenticated` 角色对 `products`/`feedback`/`votes`/`replies` 没有任何权限，且 RLS 开启、不设任何 policy，因此公开的 anon key 既读不到邮箱，也不能绕过 Turnstile 和限流直接往表里插数据。所有读写都经由持有 service-role 密钥的服务端 API Route。权限边界下沉到数据层，而不是只靠前端隐藏按钮。`supabase/tests/database/anon_access.test.sql` 负责守住这一点，见 [ADR 0007](decisions/0007-revoke-anon-data-access.md)。
 - **防刷三层**：蜜罐字段（拦截无脑脚本）→ Turnstile（拦截自动化工具）→ IP 频率限制（拦截绕过前两者的高频请求），三层是独立的中间件函数，任意一层都可以单独禁用/替换而不影响另外两层。
 - **`notify-submitter` 的共享密钥校验**：这个 Edge Function 关掉了 Supabase 自己的 JWT 校验（新版 `sb_secret_`/`sb_publishable_` 这套密钥不是 legacy secret 签发的 JWT，这个校验在这里本来就通不过，见 API.md 的部署说明），改成自己校验请求头里的 `x-webhook-secret` 是否跟 `WEBHOOK_SECRET` 这个环境变量一致。没有这一步，这个函数的公开 URL 会接受任何人伪造的请求体，把 Resend 账号变成一个垃圾邮件转发器。

@@ -32,3 +32,18 @@ jobs:
       # with a .js suffix in packages/core once passed typecheck and tests but failed here;
       # keep this step so the same class of bug can't slip back in
       - run: pnpm --filter @feedbackport/web build
+
+  # Guards the database permission boundary (see docs/decisions/0007-revoke-anon-data-access.md):
+  # starts a throwaway local Supabase stack, applies every migration, then runs the pgTAP tests
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: supabase start
+
+      - run: supabase test db
