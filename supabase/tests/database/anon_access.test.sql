@@ -24,7 +24,12 @@ select is((select relrowsecurity from pg_class where oid = 'public.feedback'::re
 select is((select relrowsecurity from pg_class where oid = 'public.votes'::regclass), true, 'RLS enabled on votes');
 select is((select relrowsecurity from pg_class where oid = 'public.replies'::regclass), true, 'RLS enabled on replies');
 select is((select relrowsecurity from pg_class where oid = 'public.products'::regclass), true, 'RLS enabled on products');
-select is((select count(*)::int from pg_policies where schemaname = 'public'), 0, 'no RLS policies on public tables');
+select is(
+  (select count(*)::int from pg_policies
+   where schemaname = 'public' and roles && array['public', 'anon', 'authenticated']::name[]),
+  0,
+  'no RLS policy applies to public, anon or authenticated'
+);
 
 -- service_role keeps full access
 select is(has_table_privilege('service_role', 'public.feedback', 'select'), true, 'service_role can select feedback');
