@@ -35,7 +35,9 @@
 
 ## Phase 3: AI-assisted triage (the differentiator)
 
-- [ ] Enable the `embedding` column, wire up an embedding API (e.g. `text-embedding-3-small`); do a similarity pass at submission time and flag possible duplicates for a human to confirm and merge (`duplicate_of`)
+**Cost rule:** no code path reachable by the public may call a paid AI API. Anything that spends money (embeddings, classification, digests) must run from an admin action, a scheduled job under the owner's control, or a local tool, and must have a hard spending cap and an off switch before it ships. The MCP server calls no model itself; the model runs in the user's own client. See [ADR 0008](decisions/0008-mcp-server-design.md).
+
+- [ ] Enable the `embedding` column, wire up an embedding API (e.g. `text-embedding-3-small`); run the similarity pass as an owner-triggered batch job (never inline on a public submission) and flag possible duplicates for a human to confirm and merge (`duplicate_of`)
 - [ ] Auto-tagging: bug / feature request / question, to help filter the admin console
 - [ ] A weekly digest email: per-product summary of new feedback this week, top-voted items, and the pending count, sent to the developer
 
@@ -88,7 +90,9 @@
 
 ## Phase 3：AI 辅助分诊（差异化亮点）
 
-- [ ] 启用 `embedding` 字段，接入 embedding API（如 `text-embedding-3-small`），提交时做相似度粗筛，提示可能的重复项供人工确认合并（`duplicate_of`）
+**成本规则：**任何公开可达的代码路径都不得调用付费 AI API。凡是要花钱的功能（embedding、分类、周报摘要），只能由管理员操作、所有者控制的定时任务或本地工具触发，并且在上线前必须有硬性的花费上限和关闭开关。MCP 服务器本身不调用任何模型，模型运行在用户自己的客户端里。见 [ADR 0008](decisions/0008-mcp-server-design.md)。
+
+- [ ] 启用 `embedding` 字段，接入 embedding API（如 `text-embedding-3-small`），由所有者触发的批处理任务做相似度粗筛（不在公开提交请求里同步调用），提示可能的重复项供人工确认合并（`duplicate_of`）
 - [ ] 自动打标签：bug / 功能请求 / 疑问，辅助管理后台筛选
 - [ ] 每周摘要邮件：按产品汇总本周新增反馈数、热门投票项、待处理数量，发给开发者本人
 
