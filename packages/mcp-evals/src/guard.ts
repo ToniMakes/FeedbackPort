@@ -100,6 +100,17 @@ export function parseMaxUsd(raw: string | undefined): number {
   return n;
 }
 
+export const MAX_REPEAT = 5;
+
+export function parseRepeat(raw: string | undefined): number {
+  if (raw === undefined || raw === "") return 1;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1 || n > MAX_REPEAT) {
+    throw new Error(`EVAL_REPEAT must be a whole number from 1 to ${MAX_REPEAT}.`);
+  }
+  return n;
+}
+
 const EFFORTS = ["none", "low", "medium", "high"] as const;
 export type Effort = (typeof EFFORTS)[number];
 

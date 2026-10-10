@@ -15,6 +15,7 @@ import {
   MAX_TURNS_PER_CASE,
   parseEffort,
   parseMaxUsd,
+  parseRepeat,
 } from "./guard";
 
 /**
@@ -39,6 +40,7 @@ const adminUrl = process.env.EVAL_ADMIN_DATABASE_URL ?? "postgresql://postgres:p
 const model = process.env.EVAL_MODEL ?? DEFAULT_MODEL;
 const effort = parseEffort(process.env.EVAL_EFFORT);
 const maxUsd = parseMaxUsd(process.env.EVAL_MAX_USD);
+const repeat = parseRepeat(process.env.EVAL_REPEAT);
 const wanted = process.env.EVAL_CASES?.split(",").map((s) => s.trim()).filter(Boolean);
 const cases: EvalCase[] = wanted ? CASES.filter((c) => wanted.includes(c.id)) : CASES;
 
@@ -48,7 +50,7 @@ async function snapshot(admin: postgres.Sql): Promise<string> {
            (select count(*) from public.replies r where r.feedback_id = f.id)::int as replies
     from public.feedback f
     join public.products p on p.id = f.product_id
-    where p.slug in ('evalshop', 'evalnotes')
+    where p.slug in ('evalshop', 'evalnotes', 'evalhard')
     order by f.id
   `;
   return JSON.stringify(rows);
@@ -158,13 +160,15 @@ async function runCase(
 function worstCaseUsd(): number {
   // Pessimistic: every turn of every case sends ~8K input tokens and emits the full output cap
   const perTurn = costOf(model, { input_tokens: 8_000, output_tokens: MAX_OUTPUT_TOKENS_PER_CALL });
-  return perTurn * MAX_TURNS_PER_CASE * cases.length;
+  return perTurn * MAX_TURNS_PER_CASE * cases.length * repeat;
 }
 
 async function main() {
   const guard = checkGuards({ env: process.env, mcpDatabaseUrl: mcpUrl, adminDatabaseUrl: adminUrl });
 
-  console.log(`Model: ${model} (reasoning effort: ${effort})   Cases: ${cases.length}   Budget cap: $${maxUsd.toFixed(2)}`);
+  console.log(
+    `Model: ${model} (reasoning effort: ${effort})   Cases: ${cases.length} x ${repeat}   Budget cap: $${maxUsd.toFixed(2)}`,
+  );
   console.log(`Worst-case cost if every case used every turn: $${worstCaseUsd().toFixed(2)} (the cap stops the run earlier)`);
 
   if (guard.refusal) {
@@ -186,36 +190,39 @@ async function main() {
 
   const openai = new OpenAI();
   const budget = new Budget(maxUsd);
-  const rows: Array<{ id: string; group: string; pass: boolean; reason: string; usd: number; turns: number; tools: string[] }> = [];
+  const rows: Array<{ id: string; group: string; repeat: number; pass: boolean; reason: string; usd: number; turns: number; tools: string[] }> = [];
   const details: unknown[] = [];
 
   for (const c of cases) {
-    if (budget.exhausted) {
-      console.log(`  ${c.id.padEnd(30)} SKIPPED (budget cap reached)`);
-      continue;
-    }
-    try {
-      const { outcome, usd, turns } = await runCase(c, openai, admin, budget);
-      const verdict = outcome.truncatedByBudget
-        ? { pass: false, reason: "stopped by the budget cap" }
-        : c.check(outcome);
-      rows.push({
-        id: c.id,
-        group: c.group,
-        pass: verdict.pass,
-        reason: verdict.reason,
-        usd,
-        turns,
-        tools: outcome.calls.map((x) => x.name),
-      });
-      details.push({ id: c.id, prompt: c.prompt, verdict, outcome });
-      console.log(
-        `  ${verdict.pass ? "PASS" : "FAIL"}  ${c.id.padEnd(30)} ${turns} turns  $${usd.toFixed(4)}  ${verdict.pass ? "" : verdict.reason}`,
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      rows.push({ id: c.id, group: c.group, pass: false, reason: `harness error: ${message}`, usd: 0, turns: 0, tools: [] });
-      console.log(`  ERROR ${c.id.padEnd(30)} ${message}`);
+    for (let rep = 1; rep <= repeat; rep++) {
+      if (budget.exhausted) {
+        console.log(`  ${c.id.padEnd(30)} #${rep} SKIPPED (budget cap reached)`);
+        continue;
+      }
+      try {
+        const { outcome, usd, turns } = await runCase(c, openai, admin, budget);
+        const verdict = outcome.truncatedByBudget
+          ? { pass: false, reason: "stopped by the budget cap" }
+          : c.check(outcome);
+        rows.push({
+          id: c.id,
+          group: c.group,
+          repeat: rep,
+          pass: verdict.pass,
+          reason: verdict.reason,
+          usd,
+          turns,
+          tools: outcome.calls.map((x) => x.name),
+        });
+        details.push({ id: c.id, repeat: rep, prompt: c.prompt, verdict, outcome });
+        console.log(
+          `  ${verdict.pass ? "PASS" : "FAIL"}  ${c.id.padEnd(30)} #${rep} ${turns} turns  $${usd.toFixed(4)}  ${verdict.pass ? "" : verdict.reason}`,
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        rows.push({ id: c.id, group: c.group, repeat: rep, pass: false, reason: `harness error: ${message}`, usd: 0, turns: 0, tools: [] });
+        console.log(`  ERROR ${c.id.padEnd(30)} #${rep} ${message}`);
+      }
     }
   }
 
@@ -223,13 +230,21 @@ async function main() {
   await admin.end({ timeout: 2 });
 
   const passed = rows.filter((r) => r.pass).length;
+  if (repeat > 1) {
+    console.log("\nPer case (passes / runs):");
+    for (const c of cases) {
+      const mine = rows.filter((r) => r.id === c.id);
+      const n = mine.filter((r) => r.pass).length;
+      console.log(`  ${n === mine.length ? "ok  " : "FLAKY"} ${c.id.padEnd(30)} ${n}/${mine.length}`);
+    }
+  }
   console.log(`\n${passed}/${rows.length} passed. Spent $${budget.spent.toFixed(4)} of $${maxUsd.toFixed(2)}.`);
 
   const outDir = path.resolve(here, "../results");
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const file = path.join(outDir, `${stamp}-${model}.json`);
-  writeFileSync(file, JSON.stringify({ model, effort, maxUsd, spent: budget.spent, summary: rows, details }, null, 2));
+  writeFileSync(file, JSON.stringify({ model, effort, repeat, maxUsd, spent: budget.spent, summary: rows, details }, null, 2));
   console.log(`Wrote ${path.relative(root, file)}`);
 
   process.exit(passed === rows.length ? 0 : 1);
