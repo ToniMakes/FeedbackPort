@@ -10,6 +10,7 @@ FeedbackPort is an open-source feedback hub for indie developers and small teams
 - Collect ideas from a website with a small, framework-free widget.
 - Review and reply to feedback by product or across your portfolio.
 - Show users the current status of each idea on the public board.
+- Let an AI assistant read the inbox and draft replies, which only go out after you publish them ([MCP](docs/MCP.md)).
 
 ## Live sample board
 
@@ -89,6 +90,7 @@ Add the keys printed by `supabase start` to `apps/web/.env.local` as described i
 | Database and admin authentication | Supabase Postgres, Row Level Security, Supabase Auth |
 | Abuse prevention | Cloudflare Turnstile, honeypot, Upstash Redis |
 | Notifications | Supabase Database Webhooks, Deno Edge Functions, Resend |
+| AI assistants | MCP server (TypeScript, stdio) on a restricted Postgres role; human review of every draft |
 | Production hosting | Vercel |
 | Staging deployment | Docker, AWS ECS/Fargate |
 
@@ -126,6 +128,7 @@ FeedbackPort 是面向独立开发者和小团队的开源反馈工具。为每�
 - 通过轻量组件从网站收集想法，不依赖宿主页面的前端框架。
 - 按产品或跨产品查看反馈、更新状态并回复用户。
 - 在公开面板展示每条想法的当前状态。
+- 让 AI 助手读取收件箱并起草回复，只有你发布之后才会发出（[MCP](docs/MCP.md)）。
 
 ## 在线示例面板
 
@@ -205,6 +208,7 @@ pnpm dev
 | 数据库与管理员认证 | Supabase Postgres、Row Level Security、Supabase Auth |
 | 防刷 | Cloudflare Turnstile、蜜罐、Upstash Redis |
 | 通知 | Supabase Database Webhooks、Deno Edge Functions、Resend |
+| AI 助手 | MCP 服务器（TypeScript，stdio），使用受限的 Postgres 角色；每条草稿都由人审核 |
 | 生产托管 | Vercel |
 | Staging 部署 | Docker、AWS ECS/Fargate |
 

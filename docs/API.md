@@ -75,6 +75,24 @@ Request body: `{ body: string }`
 
 - The cross-product unified-inbox query — leaving `product` empty returns the aggregate across all products. This is the key difference from the public endpoints (which enforce single-tenant filtering, while the admin endpoint defaults to no filtering)
 
+### `GET /api/admin/drafts?status=pending`
+
+`status` is `pending` (default), `published` or `rejected`.
+
+- Replies drafted through the MCP server and waiting for review (see [MCP.md](MCP.md)). Each item has the draft, the assistant's rationale, `contains_links`, and the original feedback and product
+- Submitter emails are not returned
+- Drafts are not replies: nothing in this list has been sent
+
+### `POST /api/admin/drafts/:id/publish`
+
+- Calls the `publish_reply_draft` SQL function, which flips the draft to `published` and inserts the `replies` row (`is_admin = true`) in one transaction
+- Returns `201 { replyId }`. A draft that is not pending (already handled, or a double click) returns `409`, so one draft can never produce two replies or two emails
+- The insert into `replies` triggers the usual notification webhook, exactly like a reply written by hand
+
+### `POST /api/admin/drafts/:id/reject`
+
+- Calls `reject_reply_draft`. Returns `{ ok: true }`, or `409` if the draft is not pending. Nothing is sent
+
 ## Widget init parameters
 
 How a host page embeds it:
@@ -200,6 +218,24 @@ The Edge Function's input is the standard Supabase webhook payload (`{ type, tab
 ### `GET /api/admin/feedback?product=&status=`
 
 - 跨产品统一收件箱查询，`product` 留空即返回全部产品聚合结果，这是与公开端点的关键差异（公开端点强制单租户过滤，管理端点默认不过滤）
+
+### `GET /api/admin/drafts?status=pending`
+
+`status` 取 `pending`（默认）、`published` 或 `rejected`。
+
+- 通过 MCP 服务器起草、等待审核的回复（见 [MCP.md](MCP.md)）。每一项包含草稿、助手给出的理由、`contains_links`，以及原始反馈和产品
+- 不返回提交者邮箱
+- 草稿不是回复：这个列表里的内容都没有发送过
+
+### `POST /api/admin/drafts/:id/publish`
+
+- 调用 SQL 函数 `publish_reply_draft`：在同一个事务里把草稿改为 `published` 并插入 `replies` 行（`is_admin = true`）
+- 返回 `201 { replyId }`。草稿不是待审状态（已被处理或重复点击）时返回 `409`，所以一条草稿不会产生两条回复或两封邮件
+- 插入 `replies` 会照常触发通知 webhook，和手写的回复完全一样
+
+### `POST /api/admin/drafts/:id/reject`
+
+- 调用 `reject_reply_draft`。返回 `{ ok: true }`，草稿不是待审状态时返回 `409`。不会发送任何内容
 
 ## Widget 初始化参数
 
