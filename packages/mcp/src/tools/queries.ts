@@ -1,5 +1,6 @@
 import { FEEDBACK_STATUSES } from "@feedbackport/core";
 import type { Db } from "../db";
+import { ToolError } from "../errors";
 import { wrapUntrusted } from "../safety/untrusted";
 
 /**
@@ -42,12 +43,18 @@ export function encodeCursor(createdAt: Date, id: string): string {
 export function decodeCursor(cursor: string): { t: string; id: string } {
   try {
     const parsed = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")) as { t?: unknown; id?: unknown };
-    if (typeof parsed.t !== "string" || typeof parsed.id !== "string" || Number.isNaN(Date.parse(parsed.t))) {
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (
+      typeof parsed.t !== "string" ||
+      typeof parsed.id !== "string" ||
+      Number.isNaN(Date.parse(parsed.t)) ||
+      !uuid.test(parsed.id)
+    ) {
       throw new Error("bad shape");
     }
     return { t: parsed.t, id: parsed.id };
   } catch {
-    throw new Error("Invalid cursor. Pass the next_cursor value from the previous call unchanged.");
+    throw new ToolError("Invalid cursor. Pass the next_cursor value from the previous call unchanged.");
   }
 }
 
@@ -97,7 +104,7 @@ export async function listProducts(db: Db) {
 
 export async function listFeedback(db: Db, p: ListFeedbackParams) {
   if (p.cursor && p.sort !== "newest") {
-    throw new Error("cursor is only supported with sort=newest. Use a smaller limit or filter by status instead.");
+    throw new ToolError("cursor is only supported with sort=newest. Use a smaller limit or filter by status instead.");
   }
   const cursor = p.cursor ? decodeCursor(p.cursor) : null;
   const fetchCount = p.limit + 1;

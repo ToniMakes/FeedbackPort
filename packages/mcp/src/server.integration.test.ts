@@ -40,8 +40,17 @@ describe.skipIf(!url)("MCP server against a local database", () => {
 
   it("exposes exactly the read tools and no write-capable ones", async () => {
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(["get_feedback", "get_inbox_stats", "list_feedback", "list_products"]);
-    for (const t of tools) expect(t.annotations?.readOnlyHint).toBe(true);
+    expect(tools.map((t) => t.name).sort()).toEqual([
+      "draft_reply",
+      "get_feedback",
+      "get_inbox_stats",
+      "list_drafts",
+      "list_feedback",
+      "list_products",
+    ]);
+    // The only tool that writes anything is draft_reply, and what it writes is a pending draft
+    const writers = tools.filter((t) => t.annotations?.readOnlyHint === false).map((t) => t.name);
+    expect(writers).toEqual(["draft_reply"]);
   });
 
   it("lists the sample product with status counts", async () => {
@@ -103,9 +112,54 @@ describe.skipIf(!url)("MCP server against a local database", () => {
     expect(json.top_voted_unfinished.length).toBeLessThanOrEqual(3);
   });
 
+  it("saves a draft as pending, flags links, and leaves feedback and replies untouched", async () => {
+    const list = await call("list_feedback", { product: "lumen", status: "open", limit: 1 });
+    const item = list.json.items[0];
+    const before = await call("get_feedback", { id: item.id });
+
+    const plain = await call("draft_reply", { feedback_id: item.id, body: "Thanks, we are looking at this.", rationale: "acknowledge" });
+    expect(plain.json.status).toBe("pending");
+    expect(plain.json.contains_links).toBe(false);
+    expect(plain.json.message).toMatch(/NOT been sent/);
+
+    const linked = await call("draft_reply", { feedback_id: item.id, body: "See https://example.com/x for details" });
+    expect(linked.json.contains_links).toBe(true);
+
+    const after = await call("get_feedback", { id: item.id });
+    expect(after.json.item.replies).toEqual(before.json.item.replies);
+    expect(after.json.item.status).toBe(before.json.item.status);
+    expect(after.json.item.pending_drafts).toBe(before.json.item.pending_drafts + 2);
+
+    const drafts = await call("list_drafts", { feedback_id: item.id });
+    expect(drafts.json.drafts.length).toBe(after.json.item.pending_drafts);
+  });
+
+  it("enforces the per-item draft limit and reports unknown feedback ids", async () => {
+    const list = await call("list_feedback", { product: "lumen", status: "planned", limit: 1 });
+    const id = list.json.items[0].id as string;
+    const results = [];
+    for (let i = 0; i < 4; i++) results.push(await call("draft_reply", { feedback_id: id, body: `draft ${i}` }));
+    expect(results.filter((r) => r.isError)).toHaveLength(1);
+    expect(results[3]!.json.error).toMatch(/too many pending drafts/);
+
+    const missing = await call("draft_reply", { feedback_id: "00000000-0000-0000-0000-000000000000", body: "x" });
+    expect(missing.isError).toBe(true);
+    expect(missing.json.error).toMatch(/No feedback item/);
+  });
+
+  it("rejects empty or oversized drafts at the schema level", async () => {
+    const id = "00000000-0000-0000-0000-000000000000";
+    expect((await client.callTool({ name: "draft_reply", arguments: { feedback_id: id, body: "" } })).isError).toBe(true);
+    expect((await client.callTool({ name: "draft_reply", arguments: { feedback_id: id, body: "x".repeat(2001) } })).isError).toBe(true);
+  });
+
   it("cannot reach anything outside the views", async () => {
     await expect(db`select count(*) from public.feedback`).rejects.toMatchObject({ code: "42501" });
     await expect(db`select * from private.mcp_settings`).rejects.toMatchObject({ code: "42501" });
     await expect(db`update public.feedback set status = 'done'`).rejects.toMatchObject({ code: "42501" });
+    await expect(
+      db`insert into public.replies (feedback_id, body, is_admin) select id, 'x', true from mcp.feedback limit 1`,
+    ).rejects.toMatchObject({ code: "42501" });
+    await expect(db`update public.reply_drafts set status = 'published'`).rejects.toMatchObject({ code: "42501" });
   });
 });
