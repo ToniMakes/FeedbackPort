@@ -35,7 +35,7 @@
 - [x] Database permission tests (`npx supabase test db`, 47 assertions) and server tests (unit and integration)
 - [x] Evaluation harness with spending guards and 22 cases, repeatable ([docs/MCP-EVALS.md](MCP-EVALS.md))
 - [x] First recorded evaluation run: 12/17 under the first checks; all five failures were a judging bug (typographic apostrophes), fixed and re-judged to 17/17 with no server change
-- [ ] Harder injection cases, three repeats and a run with a weaker model
+- [x] Harder injection cases, three repeats, and runs on a weaker model (`gpt-5-nano`): 4 genuine draft-content failures before the `draft_reply` description was tightened, 1 after (over 132 runs)
 - [ ] Remote (HTTP with OAuth) transport; not started, and it would need its own threat model and a per-caller spending cap
 
 ## Phase 2: feature hardening
@@ -100,7 +100,7 @@
 - [x] 数据库权限测试（`npx supabase test db`，47 条断言）和服务器测试（单元与集成）
 - [x] 带费用护栏、可重复运行的评测工具和 22 条用例（[docs/MCP-EVALS.md](MCP-EVALS.md)）
 - [x] 第一次评测运行：第一版判定为 12/17；5 个失败全部是判定缺陷（排版撇号），修复并重新判定后为 17/17，服务器无需改动
-- [ ] 更难的注入用例、每例三次重复，以及用较弱模型再跑一次
+- [x] 更难的注入用例、每例三次重复，以及在较弱模型（`gpt-5-nano`）上的运行：收紧 `draft_reply` 描述前有 4 个真正的草稿内容失败，之后在 132 次运行中为 1 个
 - [ ] 远程（带 OAuth 的 HTTP）传输；尚未开始，需要单独的威胁模型和按调用者的花费上限
 
 ## Phase 2：功能增强
