@@ -91,6 +91,25 @@ The admin console's default view is "all products" — it aggregates feedback ac
 3. A Supabase DB webhook detects the insert into `replies` or the change to `feedback.status`, and asynchronously invokes the `notify-submitter` Edge Function
 4. The Edge Function looks up the submitter's email for that feedback item and calls Resend to send the notification
 
+## AI assistants (MCP)
+
+A local MCP server (`packages/mcp`) lets an assistant read the inbox and draft replies. It is a separate process on the owner's machine, not part of the Next.js app, and it never sends anything.
+
+~~~mermaid
+flowchart LR
+    Client[Claude Desktop / Claude Code] -- MCP, stdio --> Server[packages/mcp]
+    Server -- role mcp_agent --> Views[(mcp views + reply_drafts)]
+    Views --- DB[(Postgres)]
+    Admin[Admin console /admin/drafts] -- service role --> Pub[publish_reply_draft]
+    Pub --> Replies[(replies)] --> Notify[notify-submitter] --> Mail[Email to submitter]
+~~~
+
+- The server connects as `mcp_agent`, which has no privileges on the `public` tables. It reads email-free views and can only insert drafts.
+- A draft never reaches `replies`, so the notification webhook cannot fire for it. A person publishes it in the admin console, and only then is a reply written and emailed.
+- The server itself calls no model; the model is whatever client it is connected to. No public code path calls a paid AI API (see the cost rule in the roadmap).
+
+See [MCP.md](MCP.md) for the tools and the threat model and [ADR 0008](decisions/0008-mcp-server-design.md) for the decisions.
+
 ## Security boundaries
 
 - **Data-layer access (RLS + GRANT)**: the `anon` and `authenticated` roles have no privileges on `products`/`feedback`/`votes`/`replies`, and RLS is enabled with no policies, so the public anon key cannot read emails or insert rows directly through PostgREST (which would skip Turnstile and rate limiting). Every read and write goes through server-side API Routes holding the service-role key. The permission boundary lives at the data layer, not just behind a hidden button in the UI. `supabase/tests/database/anon_access.test.sql` guards this; see [ADR 0007](decisions/0007-revoke-anon-data-access.md).
@@ -191,6 +210,25 @@ sequenceDiagram
 2. 写入成功后事务提交，不在这一步调用任何邮件逻辑
 3. Supabase DB Webhook 检测到 `replies` 表 insert 或 `feedback.status` 变更，异步调用 `notify-submitter` Edge Function
 4. Edge Function 查出该反馈的提交者邮箱，调用 Resend 发送通知
+
+## AI 助手（MCP）
+
+一个本地 MCP 服务器（`packages/mcp`）让助手可以读取收件箱并起草回复。它是所有者电脑上的独立进程，不属于 Next.js 应用，并且从不发送任何东西。
+
+~~~mermaid
+flowchart LR
+    Client[Claude Desktop / Claude Code] -- MCP, stdio --> Server[packages/mcp]
+    Server -- 角色 mcp_agent --> Views[(mcp 视图 + reply_drafts)]
+    Views --- DB[(Postgres)]
+    Admin[管理后台 /admin/drafts] -- service role --> Pub[publish_reply_draft]
+    Pub --> Replies[(replies)] --> Notify[notify-submitter] --> Mail[邮件发给提交者]
+~~~
+
+- 服务器使用 `mcp_agent` 角色连接，它对 `public` 里的表没有任何权限，只读取不含邮箱的视图，只能插入草稿。
+- 草稿不会进入 `replies`，所以通知 webhook 不可能为它触发。必须有人在管理后台发布，才会写入回复并发邮件。
+- 这个服务器本身不调用任何模型，模型是它所连接的客户端。没有任何公开可达的代码路径会调用付费 AI API（见路线图中的成本规则）。
+
+工具和威胁模型见 [MCP.md](MCP.md)，决策见 [ADR 0008](decisions/0008-mcp-server-design.md)。
 
 ## 安全边界
 

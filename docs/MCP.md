@@ -50,6 +50,8 @@ Local development (`npx supabase start`): the database URL is
 
 Hosted Supabase: use the pooler connection string for the `mcp_agent` user (Project Settings, Database), for example `postgresql://mcp_agent.<project-ref>:<password>@<pooler-host>:5432/postgres`.
 
+For a hosted project, apply the two migrations (`20261010000000_mcp_agent_views.sql` and `20261010000100_reply_drafts.sql`). If the project was created by hand its migration history may be empty, in which case `supabase db push` would try to re-run the first migrations. Run the two files directly instead (SQL editor, or `supabase db query --linked -f <file>`). Both are additive: they create new schemas, a table and a role, and change no existing table.
+
 ### 2. Connect a client
 
 Claude Desktop (`claude_desktop_config.json`) or Claude Code (`.mcp.json`):
@@ -173,6 +175,8 @@ alter role mcp_agent password '<一串足够长的随机密码>';
 本地开发（`npx supabase start`）：连接串是 `postgresql://mcp_agent:<密码>@127.0.0.1:54322/postgres`。
 
 托管的 Supabase：使用 `mcp_agent` 用户的连接池连接串（Project Settings，Database）。
+
+托管项目需要应用这两条迁移（`20261010000000_mcp_agent_views.sql` 和 `20261010000100_reply_drafts.sql`）。如果项目是手工创建的，迁移历史可能是空的，这时 `supabase db push` 会试图重新执行最早的迁移，请直接执行这两个文件（SQL 编辑器，或 `supabase db query --linked -f <文件>`）。两者都只新增对象：新的 schema、一张表和一个角色，不改动任何现有的表。
 
 ### 2. 连接客户端
 

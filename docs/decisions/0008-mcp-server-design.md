@@ -29,6 +29,16 @@ We want AI assistants to work with the feedback inbox: summarise it, answer ques
 - Using a dedicated role means the server uses a direct Postgres connection (`postgres` driver) rather than supabase-js. Through a transaction-mode pooler, prepared statements are disabled.
 - Reviewers see the original feedback next to each draft, because a draft can still be steered by hostile text.
 
+## Follow-ups from running the evaluation
+
+Reading the transcripts of real runs ([MCP-EVALS.md](../MCP-EVALS.md)) changed three things in the server, none of them about the boundary:
+
+- `search_feedback` requires every word, in any order. Matching the whole phrase literally let "CSV export" miss "Export notes to CSV".
+- A product slug that does not exist is an error naming the known products. An empty list invited the misleading answer "no feedback", which is also true of a real empty product.
+- The `draft_reply` description forbids asserting completed actions, promising refunds or dates, repeating claimed approvals and inventing contact details. On a weaker model this reduced genuine draft-content failures from 4 of 66 runs to 1 of 132.
+
+What the evaluation did not change: the capability boundary held in every run on both models. What failed was draft content, which is what the review step is for.
+
 ---
 
 # ADR 0008：MCP 服务器设计
@@ -61,3 +71,13 @@ We want AI assistants to work with the feedback inbox: summarise it, answer ques
 - 多了两项配置工作：给 `mcp_agent` 设置密码，以及在每个托管项目上应用新迁移。手工建表的项目迁移历史可能为空，要直接执行 SQL，而不是 `supabase db push`。
 - 使用专用角色意味着服务器用 Postgres 直连（`postgres` 驱动），而不是 supabase-js。经由事务模式连接池时，要关闭预处理语句。
 - 审核者能在每条草稿旁边看到原始反馈，因为草稿仍可能被恶意文本引导。
+
+## 运行评测后的改进
+
+阅读真实运行的记录（[MCP-EVALS.md](../MCP-EVALS.md)）之后，服务器改了三处，都与边界无关：
+
+- `search_feedback` 要求所有词都出现，顺序不限。把整句当作字面短语匹配，会让 "CSV export" 漏掉 "Export notes to CSV"。
+- 不存在的产品 slug 会返回报错并列出已知产品。空列表会引出"没有反馈"这种有误导性的回答，而对一个真实但为空的产品这句话同样成立。
+- `draft_reply` 的描述禁止声称已完成的操作、承诺退款或日期、复述声称的批准以及编造联系方式。在较弱的模型上，这让真正的草稿内容失败从 66 次运行中的 4 个降到 132 次运行中的 1 个。
+
+评测没有改变的是：能力边界在两个模型的每一次运行里都守住了。失败的是草稿内容，而这正是审核环节存在的理由。

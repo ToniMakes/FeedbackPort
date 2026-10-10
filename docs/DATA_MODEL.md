@@ -118,6 +118,20 @@ RLS policies decide *which rows* a role can touch; GRANT decides whether it can 
 
 Regression test: `npx supabase test db` runs `supabase/tests/database/anon_access.test.sql`.
 
+## Tables and roles added for the MCP server
+
+Added by migrations `20261010000000_mcp_agent_views.sql` and `20261010000100_reply_drafts.sql`; see [MCP.md](MCP.md) and [ADR 0008](decisions/0008-mcp-server-design.md).
+
+| Object | Purpose |
+|---|---|
+| `reply_drafts` | A reply proposed by an AI assistant: `feedback_id`, `body` (1 to 2000), `rationale` (up to 500), `contains_links`, `source`, `status` (`pending` / `published` / `rejected`), `published_reply_id`, `reviewed_at`. A draft is not a reply: it never reaches `replies` until it is published |
+| `mcp.products`, `mcp.feedback`, `mcp.replies` | Views the assistant reads. They expose no email column; `mcp.feedback` adds `submitter_ref` (a salted hash), `vote_count` and `admin_reply_count` |
+| `private.mcp_settings` | Holds the salt for `submitter_ref`. The `private` schema is not readable by the assistant's role |
+| `mcp_agent` (role) | The role the MCP server connects as: no privileges on `public` tables, `select` on the `mcp` views, `select` and a column-limited `insert` on `reply_drafts` |
+| `publish_reply_draft(uuid)`, `reject_reply_draft(uuid)` | `service_role` only. Publishing flips the status and inserts the reply in one transaction and returns null if the draft is not pending |
+
+A `before insert` trigger on `reply_drafts` sets `contains_links` itself and enforces at most 3 pending drafts per feedback item and 50 overall, so the limits hold even if a client is manipulated. Row Level Security on the table has policies only for `mcp_agent`; `anon` and `authenticated` have no access. Tests: `supabase/tests/database/mcp_agent.test.sql`.
+
 ## Additional field notes
 
 - `submitter_email` / `voter_email`: there's no account system — the email address is the identity. For a user already logged into the host product, the host page pre-fills the email when it initializes the widget (see the widget init params in API.md); logged-out users type it in manually.
@@ -245,6 +259,20 @@ grant all on all sequences in schema public to service_role;
 RLS policy 决定"这个角色能碰哪些行"，GRANT 决定"这个角色能不能碰这张表"。有些 Supabase 项目配置下，新建的表不会自动给 `service_role` 授权，症状是报 `permission denied for table X`，所以 `service_role` 的授权保持显式写出。迁移还撤销了 `public` schema 里今后新建表默认授予 `anon`/`authenticated` 的权限，新表在迁移明确开放之前都是私有的。
 
 回归测试：`npx supabase test db` 会运行 `supabase/tests/database/anon_access.test.sql`。
+
+## 为 MCP 服务器新增的表和角色
+
+由迁移 `20261010000000_mcp_agent_views.sql` 和 `20261010000100_reply_drafts.sql` 添加，见 [MCP.md](MCP.md) 和 [ADR 0008](decisions/0008-mcp-server-design.md)。
+
+| 对象 | 作用 |
+|---|---|
+| `reply_drafts` | AI 助手提议的回复：`feedback_id`、`body`（1 到 2000）、`rationale`（最多 500）、`contains_links`、`source`、`status`（`pending` / `published` / `rejected`）、`published_reply_id`、`reviewed_at`。草稿不是回复：发布之前不会进入 `replies` |
+| `mcp.products`、`mcp.feedback`、`mcp.replies` | 助手读取的视图。没有任何邮箱列；`mcp.feedback` 增加了 `submitter_ref`（加盐哈希）、`vote_count` 和 `admin_reply_count` |
+| `private.mcp_settings` | 保存 `submitter_ref` 的盐。`private` schema 对助手的角色不可读 |
+| `mcp_agent`（角色） | MCP 服务器连接所用的角色：对 `public` 里的表没有任何权限，可 `select` `mcp` 视图，可 `select` 以及按列限制 `insert` `reply_drafts` |
+| `publish_reply_draft(uuid)`、`reject_reply_draft(uuid)` | 仅 `service_role`。发布在同一个事务里改状态并插入回复，草稿不是待审状态时返回 null |
+
+`reply_drafts` 上的 `before insert` 触发器会自行设置 `contains_links`，并限制每条反馈最多 3 条待审草稿、全局最多 50 条，所以即使客户端被操纵，这些限制依然成立。该表的 RLS 只有针对 `mcp_agent` 的策略，`anon` 和 `authenticated` 没有任何权限。测试：`supabase/tests/database/mcp_agent.test.sql`。
 
 ## 字段说明补充
 
