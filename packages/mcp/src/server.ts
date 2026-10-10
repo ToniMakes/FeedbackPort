@@ -4,8 +4,10 @@ import { z } from "zod";
 import type { McpConfig } from "./config";
 import type { Db } from "./db";
 import { ToolError } from "./errors";
+import { triageInboxPrompt, weeklyDigestPrompt } from "./prompts";
 import { capResult, stripControlChars, UNTRUSTED_NOTICE } from "./safety/untrusted";
 import { createDraft, listDrafts } from "./tools/drafts";
+import { MAX_SEARCH_LIMIT, searchFeedback } from "./tools/search";
 import {
   DEFAULT_LIMIT,
   getFeedback,
@@ -121,6 +123,65 @@ export function createServer(db: Db, config: McpConfig): McpServer {
         notice: UNTRUSTED_NOTICE,
         ...(await getInboxStats(db, { product: args.product, sinceDays: args.since_days, topN: args.top_n })),
       })),
+  );
+
+  server.registerTool(
+    "search_feedback",
+    {
+      title: "Search feedback",
+      description: `Find feedback whose title or text contains a phrase (case-insensitive, literal match, works for Chinese). Returns short snippets, not full bodies; call get_feedback for the whole item. Duplicates are skipped. ${UNTRUSTED_WARNING}`,
+      inputSchema: {
+        query: z.string().min(2).max(100),
+        product: slug.optional(),
+        limit: z.number().int().min(1).max(MAX_SEARCH_LIMIT).default(10),
+      },
+      annotations: readOnly,
+    },
+    async (args) =>
+      guarded(config, async () => ({
+        notice: UNTRUSTED_NOTICE,
+        ...(await searchFeedback(db, { query: args.query, product: args.product, limit: args.limit })),
+      })),
+  );
+
+  server.registerResource(
+    "products",
+    "feedbackport://products",
+    {
+      title: "Products and counts",
+      description: "Every product with feedback counts per status. Contains no user-submitted text.",
+      mimeType: "application/json",
+    },
+    async (uri) => ({
+      contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(await listProducts(db)) }],
+    }),
+  );
+
+  server.registerPrompt(
+    "triage_inbox",
+    {
+      title: "Triage the inbox",
+      description: "Classify unanswered feedback and draft replies for human review.",
+      argsSchema: { product: slug.optional() },
+    },
+    ({ product }) => ({
+      messages: [{ role: "user", content: { type: "text", text: triageInboxPrompt(product) } }],
+    }),
+  );
+
+  server.registerPrompt(
+    "weekly_digest",
+    {
+      title: "Weekly digest",
+      description: "A short plain-language summary of recent feedback for non-technical teammates.",
+      argsSchema: {
+        product: slug.optional(),
+        days: z.coerce.number().int().min(1).max(90).default(7),
+      },
+    },
+    ({ product, days }) => ({
+      messages: [{ role: "user", content: { type: "text", text: weeklyDigestPrompt(product, days ?? 7) } }],
+    }),
   );
 
   server.registerTool(

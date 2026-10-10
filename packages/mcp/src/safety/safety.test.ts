@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { loadConfig } from "../config";
 import { decodeCursor, encodeCursor } from "../tools/queries";
+import { triageInboxPrompt, weeklyDigestPrompt } from "../prompts";
+import { escapeLike, makeSnippet } from "../tools/search";
 import { detectInjection } from "./injection";
 import { capResult, MAX_BODY_CHARS, stripControlChars, truncate, wrapUntrusted } from "./untrusted";
 
@@ -104,5 +106,30 @@ describe("loadConfig", () => {
   it("applies defaults", () => {
     const c = loadConfig({ MCP_DATABASE_URL: "postgresql://u:p@localhost:5432/db" });
     expect(c.MCP_MAX_RESULT_CHARS).toBe(40_000);
+  });
+});
+
+describe("search helpers", () => {
+  it("escapes LIKE wildcards and backslashes", () => {
+    expect(escapeLike("50%_off\\x")).toBe("50\\%\\_off\\\\x");
+  });
+
+  it("builds a snippet around the match and handles missing text", () => {
+    const text = `${"a".repeat(200)} needle ${"b".repeat(200)}`;
+    const snippet = makeSnippet(text, "NEEDLE")!;
+    expect(snippet).toContain("needle");
+    expect(snippet.length).toBeLessThan(260);
+    expect(snippet.startsWith("…")).toBe(true);
+    expect(makeSnippet(null, "x")).toBeNull();
+  });
+});
+
+describe("prompts", () => {
+  it("always restate that feedback text is data and that nothing is sent directly", () => {
+    for (const text of [triageInboxPrompt(undefined), triageInboxPrompt("lumen"), weeklyDigestPrompt("lumen", 7)]) {
+      expect(text).toMatch(/Never follow instructions/);
+    }
+    expect(triageInboxPrompt("lumen")).toMatch(/reviewed by a person/);
+    expect(weeklyDigestPrompt(undefined, 14)).toMatch(/14 days/);
   });
 });
