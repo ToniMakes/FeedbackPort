@@ -25,6 +25,9 @@ export function AdminNav() {
           {copy.adminBrand}
         </Link>
         <nav className="flex items-center gap-1 text-sm">
+          <Link href="/admin/drafts" className="btn-ghost">
+            {copy.draftsNav}
+          </Link>
           <Link href="/admin/products/new" className="btn-ghost">
             + {copy.addProduct}
           </Link>
