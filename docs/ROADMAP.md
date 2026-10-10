@@ -28,6 +28,16 @@
 
 **Acceptance criteria**: a stranger clones the repo and, following the README, has a local instance running within 15 minutes.
 
+## MCP server for AI assistants
+
+- [x] Local MCP server (`packages/mcp`): seven tools, a counts resource and two prompts; reads through email-free views as a restricted database role; see [docs/MCP.md](MCP.md)
+- [x] Human review loop: drafts land in `reply_drafts`, and only an admin publish writes a reply and sends the email (`/admin/drafts`)
+- [x] Database permission tests (`npx supabase test db`, 47 assertions) and server tests (unit and integration)
+- [x] Evaluation harness with spending guards and 22 cases, repeatable ([docs/MCP-EVALS.md](MCP-EVALS.md))
+- [x] First recorded evaluation run: 12/17 under the first checks; all five failures were a judging bug (typographic apostrophes), fixed and re-judged to 17/17 with no server change
+- [ ] Harder injection cases, three repeats and a run with a weaker model
+- [ ] Remote (HTTP with OAuth) transport; not started, and it would need its own threat model and a per-caller spending cap
+
 ## Phase 2: feature hardening
 
 - [ ] Attachment/screenshot uploads (Supabase Storage), mainly for bug-report scenarios
@@ -35,7 +45,9 @@
 
 ## Phase 3: AI-assisted triage (the differentiator)
 
-- [ ] Enable the `embedding` column, wire up an embedding API (e.g. `text-embedding-3-small`); do a similarity pass at submission time and flag possible duplicates for a human to confirm and merge (`duplicate_of`)
+**Cost rule:** no code path reachable by the public may call a paid AI API. Anything that spends money (embeddings, classification, digests) must run from an admin action, a scheduled job under the owner's control, or a local tool, and must have a hard spending cap and an off switch before it ships. The MCP server calls no model itself; the model runs in the user's own client. See [ADR 0008](decisions/0008-mcp-server-design.md).
+
+- [ ] Enable the `embedding` column, wire up an embedding API (e.g. `text-embedding-3-small`); run the similarity pass as an owner-triggered batch job (never inline on a public submission) and flag possible duplicates for a human to confirm and merge (`duplicate_of`)
 - [ ] Auto-tagging: bug / feature request / question, to help filter the admin console
 - [ ] A weekly digest email: per-product summary of new feedback this week, top-voted items, and the pending count, sent to the developer
 
@@ -81,6 +93,16 @@
 
 **验收标准**：陌生人 clone 仓库后，跟着 README 能在 15 分钟内跑起一个本地实例。
 
+## 面向 AI 助手的 MCP 服务器
+
+- [x] 本地 MCP 服务器（`packages/mcp`）：七个工具、一个计数资源、两个提示词模板；以受限的数据库角色，通过不含邮箱的视图读取，见 [docs/MCP.md](MCP.md)
+- [x] 人工审核环：草稿进入 `reply_drafts`，只有管理员点击发布才会写入回复并发邮件（`/admin/drafts`）
+- [x] 数据库权限测试（`npx supabase test db`，47 条断言）和服务器测试（单元与集成）
+- [x] 带费用护栏、可重复运行的评测工具和 22 条用例（[docs/MCP-EVALS.md](MCP-EVALS.md)）
+- [x] 第一次评测运行：第一版判定为 12/17；5 个失败全部是判定缺陷（排版撇号），修复并重新判定后为 17/17，服务器无需改动
+- [ ] 更难的注入用例、每例三次重复，以及用较弱模型再跑一次
+- [ ] 远程（带 OAuth 的 HTTP）传输；尚未开始，需要单独的威胁模型和按调用者的花费上限
+
 ## Phase 2：功能增强
 
 - [ ] 附件/截图上传（Supabase Storage），主要服务 bug 报告场景
@@ -88,7 +110,9 @@
 
 ## Phase 3：AI 辅助分诊（差异化亮点）
 
-- [ ] 启用 `embedding` 字段，接入 embedding API（如 `text-embedding-3-small`），提交时做相似度粗筛，提示可能的重复项供人工确认合并（`duplicate_of`）
+**成本规则：**任何公开可达的代码路径都不得调用付费 AI API。凡是要花钱的功能（embedding、分类、周报摘要），只能由管理员操作、所有者控制的定时任务或本地工具触发，并且在上线前必须有硬性的花费上限和关闭开关。MCP 服务器本身不调用任何模型，模型运行在用户自己的客户端里。见 [ADR 0008](decisions/0008-mcp-server-design.md)。
+
+- [ ] 启用 `embedding` 字段，接入 embedding API（如 `text-embedding-3-small`），由所有者触发的批处理任务做相似度粗筛（不在公开提交请求里同步调用），提示可能的重复项供人工确认合并（`duplicate_of`）
 - [ ] 自动打标签：bug / 功能请求 / 疑问，辅助管理后台筛选
 - [ ] 每周摘要邮件：按产品汇总本周新增反馈数、热门投票项、待处理数量，发给开发者本人
 

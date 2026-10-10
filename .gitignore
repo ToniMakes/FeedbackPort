@@ -40,3 +40,6 @@ crash.log
 
 # built widget copied next to the web app by `pnpm widget:publish`
 apps/web/public/widget.js
+
+# MCP evaluation runs (curated results are copied into docs/MCP-EVALS.md)
+packages/mcp-evals/results/

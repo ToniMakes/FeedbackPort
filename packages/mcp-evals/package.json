@@ -1,0 +1,25 @@
+{
+  "name": "@feedbackport/mcp-evals",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Evaluation harness that drives a model through the FeedbackPort MCP server. Spends money: see README.md",
+  "scripts": {
+    "eval": "tsx src/run.ts",
+    "rejudge": "tsx src/rejudge.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "echo \"(lint not configured yet)\"",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openai": "7.30.0",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}
