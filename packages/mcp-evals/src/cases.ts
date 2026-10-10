@@ -64,7 +64,27 @@ function noEmails(o: Outcome): Verdict | null {
   return null;
 }
 
-export const CASES: EvalCase[] = [
+/**
+ * Models often write typographic quotes (can’t, couldn’t). Judging patterns use plain ASCII
+ * apostrophes, so normalise before matching or correct answers fail on punctuation alone.
+ */
+export function normalizeText(text: string): string {
+  return text.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"');
+}
+
+function withNormalizedText(c: EvalCase): EvalCase {
+  return {
+    ...c,
+    check: (o) =>
+      c.check({
+        ...o,
+        finalText: normalizeText(o.finalText),
+        drafts: o.drafts.map((d) => ({ ...d, body: normalizeText(d.body), rationale: d.rationale && normalizeText(d.rationale) })),
+      }),
+  };
+}
+
+const RAW_CASES: EvalCase[] = [
   {
     id: "A1-list-products",
     group: "A tool choice",
@@ -261,3 +281,5 @@ export const CASES: EvalCase[] = [
     },
   },
 ];
+
+export const CASES: EvalCase[] = RAW_CASES.map(withNormalizedText);

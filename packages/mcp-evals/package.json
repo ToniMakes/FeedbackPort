@@ -6,6 +6,7 @@
   "description": "Evaluation harness that drives a model through the FeedbackPort MCP server. Spends money: see README.md",
   "scripts": {
     "eval": "tsx src/run.ts",
+    "rejudge": "tsx src/rejudge.ts",
     "typecheck": "tsc --noEmit",
     "lint": "echo \"(lint not configured yet)\"",
     "test": "vitest run"
