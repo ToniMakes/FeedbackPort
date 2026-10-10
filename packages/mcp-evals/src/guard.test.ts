@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { CASES } from "./cases";
-import { Budget, checkGuards, costOf, parseMaxUsd } from "./guard";
+import { Budget, checkGuards, costOf, parseEffort, parseMaxUsd } from "./guard";
 
 const LOCAL_MCP = "postgresql://mcp_agent:pw@127.0.0.1:54322/postgres";
 const LOCAL_ADMIN = "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 describe("spending guards", () => {
   it("is a dry run unless spending is explicitly allowed", () => {
-    const r = checkGuards({ env: { ANTHROPIC_API_KEY: "k" }, mcpDatabaseUrl: LOCAL_MCP, adminDatabaseUrl: LOCAL_ADMIN });
+    const r = checkGuards({ env: { OPENAI_API_KEY: "k" }, mcpDatabaseUrl: LOCAL_MCP, adminDatabaseUrl: LOCAL_ADMIN });
     expect(r).toEqual({ allowed: false, dryRun: true });
   });
 
   it("allows a run only with opt-in, a key and local databases", () => {
     const r = checkGuards({
-      env: { EVAL_ALLOW_SPEND: "1", ANTHROPIC_API_KEY: "k" },
+      env: { EVAL_ALLOW_SPEND: "1", OPENAI_API_KEY: "k" },
       mcpDatabaseUrl: LOCAL_MCP,
       adminDatabaseUrl: LOCAL_ADMIN,
     });
@@ -22,7 +22,7 @@ describe("spending guards", () => {
 
   it("refuses in CI even when opted in", () => {
     const r = checkGuards({
-      env: { CI: "true", EVAL_ALLOW_SPEND: "1", ANTHROPIC_API_KEY: "k" },
+      env: { CI: "true", EVAL_ALLOW_SPEND: "1", OPENAI_API_KEY: "k" },
       mcpDatabaseUrl: LOCAL_MCP,
       adminDatabaseUrl: LOCAL_ADMIN,
     });
@@ -32,7 +32,7 @@ describe("spending guards", () => {
 
   it("refuses a non-local database", () => {
     const r = checkGuards({
-      env: { EVAL_ALLOW_SPEND: "1", ANTHROPIC_API_KEY: "k" },
+      env: { EVAL_ALLOW_SPEND: "1", OPENAI_API_KEY: "k" },
       mcpDatabaseUrl: "postgresql://mcp_agent:pw@db.example.supabase.co:5432/postgres",
       adminDatabaseUrl: LOCAL_ADMIN,
     });
@@ -42,20 +42,21 @@ describe("spending guards", () => {
 
   it("requires an API key", () => {
     const r = checkGuards({ env: { EVAL_ALLOW_SPEND: "1" }, mcpDatabaseUrl: LOCAL_MCP, adminDatabaseUrl: LOCAL_ADMIN });
-    expect(r.refusal).toMatch(/ANTHROPIC_API_KEY/);
+    expect(r.refusal).toMatch(/OPENAI_API_KEY/);
   });
 });
 
 describe("budget", () => {
-  it("prices Haiku 5.5 at $0.10 / $0.50 per million tokens", () => {
-    expect(costOf("claude-haiku-5-5", { input_tokens: 1_000_000, output_tokens: 1_000_000 })).toBeCloseTo(0.6, 6);
+  it("prices gpt-6-luna at $0.10 in / $0.01 cached / $0.50 out per million tokens", () => {
+    expect(costOf("gpt-6-luna", { input_tokens: 1_000_000, output_tokens: 1_000_000 })).toBeCloseTo(0.6, 6);
+    expect(costOf("gpt-6-luna", { input_tokens: 1_000_000, output_tokens: 0, cached_input_tokens: 1_000_000 })).toBeCloseTo(0.01, 6);
   });
 
-  it("counts cache tokens as input and stops when the cap is reached", () => {
+  it("bills cached tokens at the cached rate and stops when the cap is reached", () => {
     const b = new Budget(0.001);
     expect(b.exhausted).toBe(false);
-    b.add("claude-haiku-5-5", { input_tokens: 5_000, output_tokens: 1_000, cache_read_input_tokens: 5_000 });
-    expect(b.spent).toBeCloseTo((10_000 * 0.1 + 1_000 * 0.5) / 1e6, 8);
+    b.add("gpt-6-luna", { input_tokens: 10_000, output_tokens: 1_000, cached_input_tokens: 5_000 });
+    expect(b.spent).toBeCloseTo((5_000 * 0.1 + 5_000 * 0.01 + 1_000 * 0.5) / 1e6, 8);
     expect(b.exhausted).toBe(true);
   });
 
@@ -69,6 +70,12 @@ describe("budget", () => {
     expect(() => parseMaxUsd("0")).toThrow();
     expect(() => parseMaxUsd("abc")).toThrow();
     expect(() => parseMaxUsd("1000")).toThrow();
+  });
+
+  it("validates the reasoning effort", () => {
+    expect(parseEffort(undefined)).toBe("low");
+    expect(parseEffort("none")).toBe("none");
+    expect(() => parseEffort("max")).toThrow();
   });
 });
 

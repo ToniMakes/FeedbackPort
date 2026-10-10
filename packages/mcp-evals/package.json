@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Evaluation harness that drives Claude through the FeedbackPort MCP server. Spends money: see README.md",
+  "description": "Evaluation harness that drives a model through the FeedbackPort MCP server. Spends money: see README.md",
   "scripts": {
     "eval": "tsx src/run.ts",
     "typecheck": "tsc --noEmit",
@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.132.0",
+    "openai": "7.30.0",
     "@modelcontextprotocol/sdk": "^1.32.1",
     "postgres": "^3.4.9"
   },

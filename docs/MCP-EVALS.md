@@ -23,7 +23,7 @@ Tests whether an AI model, given only the MCP tools, does the right thing on rea
 
 ## Running it
 
-It spends money, so it is manual-only. A full run is priced at a worst case of about $0.21 on the default model and is capped at $0.50 by default.
+It spends money, so it is manual-only. A full run is priced at a worst case of about $0.31 on the default model (`gpt-6-luna`, $0.10 in / $0.50 out per million tokens) and is capped at $0.50 by default. Real runs should cost a few cents.
 
 ```bash
 npx supabase start
@@ -34,7 +34,7 @@ docker exec supabase_db_supabase psql -U postgres -c "alter role mcp_agent passw
 MCP_DATABASE_URL=postgresql://mcp_agent:mcp_local@127.0.0.1:54322/postgres pnpm --filter @feedbackport/mcp-evals eval
 
 # Real run
-EVAL_ALLOW_SPEND=1 ANTHROPIC_API_KEY=<your key> \
+EVAL_ALLOW_SPEND=1 OPENAI_API_KEY=<your key> \
 MCP_DATABASE_URL=postgresql://mcp_agent:mcp_local@127.0.0.1:54322/postgres \
 pnpm --filter @feedbackport/mcp-evals eval
 ```
@@ -42,16 +42,21 @@ pnpm --filter @feedbackport/mcp-evals eval
 | Variable | Default | Meaning |
 |---|---|---|
 | `EVAL_ALLOW_SPEND` | unset | Must be `1` to call the API; otherwise a dry run |
-| `EVAL_MODEL` | `claude-haiku-5-5` | Model under test (must exist in the price table in `guard.ts`) |
+| `EVAL_MODEL` | `gpt-6-luna` | Model under test (must exist in the price table in `guard.ts`) |
+| `EVAL_EFFORT` | `low` | Reasoning effort: `none`, `low`, `medium`, `high`. Hidden reasoning tokens are billed as output |
 | `EVAL_MAX_USD` | `0.5` | Hard stop; remaining cases are skipped |
 | `EVAL_CASES` | all | Comma-separated case ids |
 | `EVAL_ADMIN_DATABASE_URL` | local default | Privileged connection used to load fixtures and read results; must be local |
 
-Guards: refuses when `CI` is set, when either database is not local, or when the key is missing; per case at most 8 turns and 1500 output tokens per call; spending is tracked from the API's usage counts.
+Guards: refuses when `CI` is set, when either database is not local, or when the key is missing; per case at most 8 turns and 3000 output tokens per call (reasoning included); spending is tracked from the API's usage counts.
 
 ## Results
 
 No run has been recorded yet. This section is filled in from `packages/mcp-evals/results/*.json` after the first paid run, including each failure and what was changed in response (a tool description, a rule in the heuristic, a prompt). A run where everything passes at once proves little, so a first-run failure followed by a fix and a second run is the useful record.
+
+## Which model
+
+The harness is model-agnostic at the MCP layer; the caller is a thin OpenAI Responses API loop. The default is `gpt-6-luna`, the cheapest current-generation small model with tool calling. The older `gpt-5-nano` has a lower list price, but it is a reasoning model whose hidden reasoning tokens count as output, so cost per task is not guaranteed to be lower; measure before switching. Results say how *that model* behaved with these tools, not how any other model would.
 
 ## Limits
 
@@ -86,7 +91,7 @@ No run has been recorded yet. This section is filled in from `packages/mcp-evals
 
 ## 运行
 
-会花钱，所以只能手动运行。完整运行在默认模型下最坏估算约 $0.21，默认上限 $0.50。
+会花钱，所以只能手动运行。完整运行在默认模型（`gpt-6-luna`，输入 $0.10、输出 $0.50 每百万 token）下最坏估算约 $0.31，默认上限 $0.50。实际运行通常只要几美分。
 
 ```bash
 npx supabase start
@@ -97,16 +102,20 @@ docker exec supabase_db_supabase psql -U postgres -c "alter role mcp_agent passw
 MCP_DATABASE_URL=postgresql://mcp_agent:mcp_local@127.0.0.1:54322/postgres pnpm --filter @feedbackport/mcp-evals eval
 
 # 真实运行
-EVAL_ALLOW_SPEND=1 ANTHROPIC_API_KEY=<你的密钥> \
+EVAL_ALLOW_SPEND=1 OPENAI_API_KEY=<你的密钥> \
 MCP_DATABASE_URL=postgresql://mcp_agent:mcp_local@127.0.0.1:54322/postgres \
 pnpm --filter @feedbackport/mcp-evals eval
 ```
 
-护栏：设置了 `CI`、数据库不是本地、或缺少密钥时拒绝运行；每个用例最多 8 轮，每次调用最多 1500 个输出 token；花费按接口返回的用量统计。
+护栏：设置了 `CI`、数据库不是本地、或缺少密钥时拒绝运行；每个用例最多 8 轮，每次调用最多 3000 个输出 token（含推理）；花费按接口返回的用量统计。
 
 ## 结果
 
 尚未记录任何运行。第一次付费运行之后，会根据 `packages/mcp-evals/results/*.json` 在这里补充，包括每一个失败，以及针对它做了什么调整（工具描述、启发式规则或提示词）。一次全部通过的运行说明不了太多，"第一轮失败、修改、第二轮通过"才是有价值的记录。
+
+## 用哪个模型
+
+评测在 MCP 层面与模型无关，调用方是一个很薄的 OpenAI Responses API 循环。默认使用 `gpt-6-luna`，它是当前代里最便宜、支持工具调用的小模型。较旧的 `gpt-5-nano` 标价更低，但它是推理模型，隐藏的推理 token 按输出计费，所以单个任务的花费不一定更低，换之前要先实测。结果反映的是*这个模型*在这些工具上的表现，不代表其他模型。
 
 ## 局限
 

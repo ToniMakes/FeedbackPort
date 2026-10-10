@@ -1,9 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import OpenAI from "openai";
 import postgres from "postgres";
 import { CASES, type Draft, type EvalCase, type Outcome, type ToolCall } from "./cases";
 import {
@@ -11,16 +11,17 @@ import {
   checkGuards,
   costOf,
   DEFAULT_MODEL,
-  MAX_TOKENS_PER_CALL,
+  MAX_OUTPUT_TOKENS_PER_CALL,
   MAX_TURNS_PER_CASE,
+  parseEffort,
   parseMaxUsd,
 } from "./guard";
 
 /**
- * Drives Claude through the FeedbackPort MCP server and checks what it did.
+ * Drives a model through the FeedbackPort MCP server and checks what it did.
  *
  *   pnpm --filter @feedbackport/mcp build
- *   EVAL_ALLOW_SPEND=1 ANTHROPIC_API_KEY=... MCP_DATABASE_URL=<local mcp_agent url> pnpm --filter @feedbackport/mcp-evals eval
+ *   EVAL_ALLOW_SPEND=1 OPENAI_API_KEY=... MCP_DATABASE_URL=<local mcp_agent url> pnpm --filter @feedbackport/mcp-evals eval
  *
  * Without EVAL_ALLOW_SPEND=1 it prints the plan and a worst-case cost and exits without calling the API.
  */
@@ -36,6 +37,7 @@ const SYSTEM_PROMPT =
 const mcpUrl = process.env.MCP_DATABASE_URL;
 const adminUrl = process.env.EVAL_ADMIN_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 const model = process.env.EVAL_MODEL ?? DEFAULT_MODEL;
+const effort = parseEffort(process.env.EVAL_EFFORT);
 const maxUsd = parseMaxUsd(process.env.EVAL_MAX_USD);
 const wanted = process.env.EVAL_CASES?.split(",").map((s) => s.trim()).filter(Boolean);
 const cases: EvalCase[] = wanted ? CASES.filter((c) => wanted.includes(c.id)) : CASES;
@@ -52,9 +54,17 @@ async function snapshot(admin: postgres.Sql): Promise<string> {
   return JSON.stringify(rows);
 }
 
+function toUsage(u: OpenAI.Responses.ResponseUsage | undefined) {
+  return {
+    input_tokens: u?.input_tokens ?? 0,
+    output_tokens: u?.output_tokens ?? 0,
+    cached_input_tokens: u?.input_tokens_details?.cached_tokens ?? 0,
+  };
+}
+
 async function runCase(
   c: EvalCase,
-  anthropic: Anthropic,
+  openai: OpenAI,
   admin: postgres.Sql,
   budget: Budget,
 ): Promise<{ outcome: Outcome; usd: number; turns: number }> {
@@ -77,54 +87,57 @@ async function runCase(
 
   try {
     const { tools: mcpTools } = await mcp.listTools();
-    const tools: Anthropic.Tool[] = mcpTools.map((t) => ({
+    const tools: OpenAI.Responses.FunctionTool[] = mcpTools.map((t) => ({
+      type: "function",
       name: t.name,
       description: t.description ?? "",
-      input_schema: t.inputSchema as Anthropic.Tool["input_schema"],
+      // The "$schema" keyword is metadata the function-calling API does not need
+      parameters: Object.fromEntries(Object.entries(t.inputSchema).filter(([k]) => k !== "$schema")),
+      strict: false,
     }));
 
-    const messages: Anthropic.MessageParam[] = [{ role: "user", content: c.prompt }];
+    let input: OpenAI.Responses.ResponseInput = [{ role: "user", content: c.prompt }];
+    let previousId: string | undefined;
 
     for (turns = 1; turns <= MAX_TURNS_PER_CASE; turns++) {
       if (budget.exhausted) {
         truncatedByBudget = true;
         break;
       }
-      const response = await anthropic.messages.create({
+      const response = await openai.responses.create({
         model,
-        max_tokens: MAX_TOKENS_PER_CALL,
-        system: SYSTEM_PROMPT,
+        instructions: SYSTEM_PROMPT,
         tools,
-        messages,
-        output_config: { effort: "low" },
+        input,
+        ...(previousId ? { previous_response_id: previousId } : {}),
+        reasoning: { effort },
+        max_output_tokens: MAX_OUTPUT_TOKENS_PER_CALL,
       });
-      budget.add(model, response.usage);
+      budget.add(model, toUsage(response.usage));
+      previousId = response.id;
 
-      const text = response.content
-        .filter((b): b is Anthropic.TextBlock => b.type === "text")
-        .map((b) => b.text)
-        .join("\n");
-      if (text) finalText = text;
+      if (response.output_text) finalText = response.output_text;
 
-      if (response.stop_reason !== "tool_use") break;
+      const toolCalls = response.output.filter(
+        (item): item is OpenAI.Responses.ResponseFunctionToolCall => item.type === "function_call",
+      );
+      if (toolCalls.length === 0 || response.status === "incomplete") break;
 
-      messages.push({ role: "assistant", content: response.content });
-      const results: Anthropic.ToolResultBlockParam[] = [];
-      for (const block of response.content) {
-        if (block.type !== "tool_use") continue;
-        const args = (block.input ?? {}) as Record<string, unknown>;
-        const res = await mcp.callTool({ name: block.name, arguments: args });
+      const results: OpenAI.Responses.ResponseInputItem.FunctionCallOutput[] = [];
+      for (const call of toolCalls) {
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(call.arguments || "{}") as Record<string, unknown>;
+        } catch {
+          // Malformed arguments are passed on as empty; the server's schema check reports the error
+        }
+        const res = await mcp.callTool({ name: call.name, arguments: args });
         const resultText = ((res.content as Array<{ type: string; text?: string }>)[0]?.text ?? "").toString();
-        calls.push({ name: block.name, args, result: resultText, isError: res.isError === true });
-        results.push({
-          type: "tool_result",
-          tool_use_id: block.id,
-          content: resultText,
-          ...(res.isError ? { is_error: true } : {}),
-        });
+        calls.push({ name: call.name, args, result: resultText, isError: res.isError === true });
+        results.push({ type: "function_call_output", call_id: call.call_id, output: resultText });
       }
-      // All results for one assistant turn go back in a single user message
-      messages.push({ role: "user", content: results });
+      // Each turn sends only the new tool results; the server keeps the earlier context
+      input = results;
     }
   } finally {
     await mcp.close().catch(() => {});
@@ -144,14 +157,14 @@ async function runCase(
 
 function worstCaseUsd(): number {
   // Pessimistic: every turn of every case sends ~8K input tokens and emits the full output cap
-  const perTurn = costOf(model, { input_tokens: 8_000, output_tokens: MAX_TOKENS_PER_CALL });
+  const perTurn = costOf(model, { input_tokens: 8_000, output_tokens: MAX_OUTPUT_TOKENS_PER_CALL });
   return perTurn * MAX_TURNS_PER_CASE * cases.length;
 }
 
 async function main() {
   const guard = checkGuards({ env: process.env, mcpDatabaseUrl: mcpUrl, adminDatabaseUrl: adminUrl });
 
-  console.log(`Model: ${model}   Cases: ${cases.length}   Budget cap: $${maxUsd.toFixed(2)}`);
+  console.log(`Model: ${model} (reasoning effort: ${effort})   Cases: ${cases.length}   Budget cap: $${maxUsd.toFixed(2)}`);
   console.log(`Worst-case cost if every case used every turn: $${worstCaseUsd().toFixed(2)} (the cap stops the run earlier)`);
 
   if (guard.refusal) {
@@ -171,7 +184,7 @@ async function main() {
   const admin = postgres(adminUrl, { max: 1, onnotice: () => {} });
   await admin.unsafe(readFileSync(seedFile, "utf8"));
 
-  const anthropic = new Anthropic();
+  const openai = new OpenAI();
   const budget = new Budget(maxUsd);
   const rows: Array<{ id: string; group: string; pass: boolean; reason: string; usd: number; turns: number; tools: string[] }> = [];
   const details: unknown[] = [];
@@ -182,7 +195,7 @@ async function main() {
       continue;
     }
     try {
-      const { outcome, usd, turns } = await runCase(c, anthropic, admin, budget);
+      const { outcome, usd, turns } = await runCase(c, openai, admin, budget);
       const verdict = outcome.truncatedByBudget
         ? { pass: false, reason: "stopped by the budget cap" }
         : c.check(outcome);
@@ -216,7 +229,7 @@ async function main() {
   mkdirSync(outDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const file = path.join(outDir, `${stamp}-${model}.json`);
-  writeFileSync(file, JSON.stringify({ model, maxUsd, spent: budget.spent, summary: rows, details }, null, 2));
+  writeFileSync(file, JSON.stringify({ model, effort, maxUsd, spent: budget.spent, summary: rows, details }, null, 2));
   console.log(`Wrote ${path.relative(root, file)}`);
 
   process.exit(passed === rows.length ? 0 : 1);

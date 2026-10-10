@@ -3,30 +3,40 @@
  * optional: the harness refuses to start unless each check passes.
  */
 
-/** USD per million tokens; prompts up to 100K tokens. Update when changing the default model. */
-export const PRICES: Record<string, { input: number; output: number }> = {
-  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
-  "claude-sonnet-5-5": { input: 2, output: 10 },
-  "claude-opus-5-5": { input: 4, output: 20 },
+/** USD per million tokens, standard tier, from OpenAI's published pricing. Update with the model. */
+export const PRICES: Record<string, { input: number; cachedInput: number; output: number }> = {
+  "gpt-6-luna": { input: 0.1, cachedInput: 0.01, output: 0.5 },
+  "gpt-5-nano": { input: 0.05, cachedInput: 0.005, output: 0.4 },
+  "gpt-4.1-mini": { input: 0.4, cachedInput: 0.1, output: 1.6 },
 };
 
-export const DEFAULT_MODEL = "claude-haiku-5-5";
+/**
+ * Cheapest current-generation small model that supports tool calling. The older gpt-5-nano has a
+ * lower list price but is a reasoning model whose hidden reasoning tokens are billed as output,
+ * so per-task cost is not guaranteed to be lower.
+ */
+export const DEFAULT_MODEL = "gpt-6-luna";
+export const DEFAULT_EFFORT = "low";
 export const DEFAULT_MAX_USD = 0.5;
 export const MAX_TURNS_PER_CASE = 8;
-export const MAX_TOKENS_PER_CALL = 1_500;
+/** Includes reasoning tokens, so it is larger than the visible answer needs */
+export const MAX_OUTPUT_TOKENS_PER_CALL = 3_000;
 
 export interface Usage {
+  /** Total input tokens, cached ones included */
   input_tokens: number;
+  /** Total output tokens, reasoning tokens included */
   output_tokens: number;
-  cache_creation_input_tokens?: number | null;
-  cache_read_input_tokens?: number | null;
+  /** Of the input tokens, how many were served from cache */
+  cached_input_tokens?: number | null;
 }
 
 export function costOf(model: string, usage: Usage): number {
   const price = PRICES[model];
   if (!price) throw new Error(`No price table entry for model "${model}". Add it to PRICES before running.`);
-  const input = (usage.input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
-  return (input * price.input + (usage.output_tokens ?? 0) * price.output) / 1_000_000;
+  const cached = Math.min(usage.cached_input_tokens ?? 0, usage.input_tokens ?? 0);
+  const fresh = (usage.input_tokens ?? 0) - cached;
+  return (fresh * price.input + cached * price.cachedInput + (usage.output_tokens ?? 0) * price.output) / 1_000_000;
 }
 
 export class Budget {
@@ -75,8 +85,8 @@ export function checkGuards({ env, mcpDatabaseUrl, adminDatabaseUrl }: GuardInpu
   if (env.EVAL_ALLOW_SPEND !== "1") {
     return { allowed: false, dryRun: true };
   }
-  if (!env.ANTHROPIC_API_KEY) {
-    return { allowed: false, dryRun: false, refusal: "ANTHROPIC_API_KEY is not set." };
+  if (!env.OPENAI_API_KEY) {
+    return { allowed: false, dryRun: false, refusal: "OPENAI_API_KEY is not set." };
   }
   return { allowed: true, dryRun: false };
 }
@@ -88,4 +98,13 @@ export function parseMaxUsd(raw: string | undefined): number {
     throw new Error("EVAL_MAX_USD must be a number greater than 0 and at most 25.");
   }
   return n;
+}
+
+const EFFORTS = ["none", "low", "medium", "high"] as const;
+export type Effort = (typeof EFFORTS)[number];
+
+export function parseEffort(raw: string | undefined): Effort {
+  if (raw === undefined || raw === "") return DEFAULT_EFFORT;
+  if ((EFFORTS as readonly string[]).includes(raw)) return raw as Effort;
+  throw new Error(`EVAL_EFFORT must be one of: ${EFFORTS.join(", ")}.`);
 }
