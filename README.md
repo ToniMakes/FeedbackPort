@@ -97,6 +97,8 @@ Add the keys printed by `supabase start` to `apps/web/.env.local` as described i
 | Document | Description |
 |---|---|
 | [Integration guide](docs/INTEGRATION.md) | Add the widget or link a product to its board |
+| [AI assistants (MCP)](docs/MCP.md) | Let an assistant read the inbox and draft replies that a person reviews; threat model and setup |
+| [MCP evaluations](docs/MCP-EVALS.md) | How the MCP server is tested with a model, and the cost guards |
 | [Deployment guide](docs/DEPLOYMENT.md) | Run locally, with Docker, or on Vercel and Supabase; set up a sample board |
 | [Architecture](docs/ARCHITECTURE.md) | Tenant routing, service boundaries, notifications, and security |
 | [Data model](docs/DATA_MODEL.md) | Database schema and Row Level Security policies |
@@ -211,6 +213,8 @@ pnpm dev
 | 文档 | 内容 |
 |---|---|
 | [接入指南](docs/INTEGRATION.md) | 嵌入 widget 或将产品链接到反馈面板 |
+| [AI 助手（MCP）](docs/MCP.md) | 让助手读取收件箱并起草回复，由人审核；威胁模型与配置 |
+| [MCP 评测](docs/MCP-EVALS.md) | 如何用模型测试 MCP 服务器，以及费用护栏 |
 | [部署指南](docs/DEPLOYMENT.md) | 本地、Docker、Vercel + Supabase 运行方式及示例面板配置 |
 | [架构文档](docs/ARCHITECTURE.md) | 租户路由、模块边界、通知与安全设计 |
 | [数据模型](docs/DATA_MODEL.md) | 数据库结构与 Row Level Security 策略 |

@@ -28,6 +28,15 @@
 
 **Acceptance criteria**: a stranger clones the repo and, following the README, has a local instance running within 15 minutes.
 
+## MCP server for AI assistants
+
+- [x] Local MCP server (`packages/mcp`): seven tools, a counts resource and two prompts; reads through email-free views as a restricted database role; see [docs/MCP.md](MCP.md)
+- [x] Human review loop: drafts land in `reply_drafts`, and only an admin publish writes a reply and sends the email (`/admin/drafts`)
+- [x] Database permission tests (`npx supabase test db`, 47 assertions) and server tests (unit and integration)
+- [x] Evaluation harness with spending guards and 17 cases ([docs/MCP-EVALS.md](MCP-EVALS.md))
+- [ ] First recorded evaluation run, with failures analysed and fixed
+- [ ] Remote (HTTP with OAuth) transport; not started, and it would need its own threat model and a per-caller spending cap
+
 ## Phase 2: feature hardening
 
 - [ ] Attachment/screenshot uploads (Supabase Storage), mainly for bug-report scenarios
@@ -82,6 +91,15 @@
 - [x] 公开示例面板：`lumen.board.tonimakes.com`，在生产部署上放一个虚构的 `lumen` 产品，数据来自 `supabase/seed.sql`。定时重置（`.github/workflows/demo-reset.yml`）在设置 `DEMO_DATABASE_URL` secret 之前不会执行，此前需要手动重新执行种子脚本来清理访客提交的内容
 
 **验收标准**：陌生人 clone 仓库后，跟着 README 能在 15 分钟内跑起一个本地实例。
+
+## 面向 AI 助手的 MCP 服务器
+
+- [x] 本地 MCP 服务器（`packages/mcp`）：七个工具、一个计数资源、两个提示词模板；以受限的数据库角色，通过不含邮箱的视图读取，见 [docs/MCP.md](MCP.md)
+- [x] 人工审核环：草稿进入 `reply_drafts`，只有管理员点击发布才会写入回复并发邮件（`/admin/drafts`）
+- [x] 数据库权限测试（`npx supabase test db`，47 条断言）和服务器测试（单元与集成）
+- [x] 带费用护栏的评测工具和 17 条用例（[docs/MCP-EVALS.md](MCP-EVALS.md)）
+- [ ] 记录第一次评测运行，并分析、修复其中的失败项
+- [ ] 远程（带 OAuth 的 HTTP）传输；尚未开始，需要单独的威胁模型和按调用者的花费上限
 
 ## Phase 2：功能增强
 
