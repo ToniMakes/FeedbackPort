@@ -169,6 +169,12 @@ describe.skipIf(!url)("MCP server against a local database", () => {
     expect(hit.json.matches[0].untrusted).toHaveProperty("snippet");
     expect(hit.json.matches[0].untrusted).not.toHaveProperty("body");
 
+    // Several words: all must appear, in any order ("mode dark" finds "Dark mode")
+    const reordered = await call("search_feedback", { query: "mode dark", product: "lumen" });
+    expect(reordered.json.matches.length).toBeGreaterThan(0);
+    const impossible = await call("search_feedback", { query: "dark zzzqqq", product: "lumen" });
+    expect(impossible.json.matches).toHaveLength(0);
+
     // '%' must not behave as a wildcard that matches everything
     const wild = await call("search_feedback", { query: "%%", product: "lumen" });
     expect(wild.json.matches).toHaveLength(0);

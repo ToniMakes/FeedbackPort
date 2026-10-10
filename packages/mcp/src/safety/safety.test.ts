@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { loadConfig } from "../config";
 import { decodeCursor, encodeCursor } from "../tools/queries";
 import { triageInboxPrompt, weeklyDigestPrompt } from "../prompts";
-import { escapeLike, makeSnippet } from "../tools/search";
+import { escapeLike, makeSnippet, splitTerms } from "../tools/search";
 import { detectInjection } from "./injection";
 import { capResult, MAX_BODY_CHARS, stripControlChars, truncate, wrapUntrusted } from "./untrusted";
 
@@ -121,6 +121,16 @@ describe("search helpers", () => {
     expect(snippet.length).toBeLessThan(260);
     expect(snippet.startsWith("…")).toBe(true);
     expect(makeSnippet(null, "x")).toBeNull();
+  });
+
+  it("splits a query into at most five words", () => {
+    expect(splitTerms("  csv   export ")).toEqual(["csv", "export"]);
+    expect(splitTerms("a b c d e f g")).toHaveLength(5);
+    expect(splitTerms("导出 csv")).toEqual(["导出", "csv"]);
+  });
+
+  it("builds a snippet around whichever word occurs in the text", () => {
+    expect(makeSnippet("Export notes to CSV for my spreadsheet", "csv export")).toContain("CSV");
   });
 });
 

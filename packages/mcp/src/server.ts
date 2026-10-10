@@ -129,7 +129,7 @@ export function createServer(db: Db, config: McpConfig): McpServer {
     "search_feedback",
     {
       title: "Search feedback",
-      description: `Find feedback whose title or text contains a phrase (case-insensitive, literal match, works for Chinese). Returns short snippets, not full bodies; call get_feedback for the whole item. Duplicates are skipped. ${UNTRUSTED_WARNING}`,
+      description: `Find feedback whose title or text contains ALL of the given words, in any order (case-insensitive, literal match, works for Chinese). Each word is matched as a substring, so prefer one or two short keywords such as "csv" over a full sentence. Returns short snippets, not full bodies; call get_feedback for the whole item. Duplicates are skipped. ${UNTRUSTED_WARNING}`,
       inputSchema: {
         query: z.string().min(2).max(100),
         product: slug.optional(),
