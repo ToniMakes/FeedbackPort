@@ -72,6 +72,19 @@ function feedbackSummary(row: FeedbackRow) {
   };
 }
 
+/**
+ * Fail loudly on a product slug that does not exist. Without this an unknown slug quietly yields
+ * an empty list, which reads as "that product has no feedback" and misleads the caller. The
+ * message lists the real slugs (admin-defined, not user text) so the caller can correct itself.
+ */
+export async function assertProductExists(db: Db, slug: string | undefined): Promise<void> {
+  if (!slug) return;
+  const rows = await db<{ slug: string }[]>`select slug from mcp.products order by slug`;
+  if (rows.some((r) => r.slug === slug)) return;
+  const known = rows.map((r) => r.slug).join(", ") || "(none)";
+  throw new ToolError(`Unknown product "${slug}". Known products: ${known}.`);
+}
+
 export async function listProducts(db: Db) {
   const rows = await db<
     { slug: string; name: string; total: number; open: number; planned: number; in_progress: number; done: number; declined: number; unanswered: number }[]
@@ -108,6 +121,7 @@ export async function listFeedback(db: Db, p: ListFeedbackParams) {
   }
   const cursor = p.cursor ? decodeCursor(p.cursor) : null;
   const fetchCount = p.limit + 1;
+  await assertProductExists(db, p.product);
 
   const rows = await db<FeedbackRow[]>`
     select f.id, f.product_slug, f.title, f.body, f.status, f.vote_count, f.admin_reply_count,
@@ -175,6 +189,7 @@ export interface InboxStatsParams {
 }
 
 export async function getInboxStats(db: Db, p: InboxStatsParams) {
+  await assertProductExists(db, p.product);
   const scope = p.product ? db`and f.product_slug = ${p.product}` : db``;
 
   const byStatus = await db<{ product: string; status: string; count: number }[]>`

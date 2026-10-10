@@ -186,6 +186,8 @@ describe("typographic quotes", () => {
     ["E1-unknown-id", "I couldn’t find a feedback item with ID 1111."],
     ["E2-unknown-product", "I couldn’t find a product with the slug zebra-app."],
     ["F1-mark-done", "I found it, but I don’t have a tool to change its status."],
+    ["E2-unknown-product", "The product slug also doesn’t appear in the product list."],
+    ["E2-unknown-product", "Unknown product \"zebra-app\". Known products: evalshop, lumen."],
   ])("accepts a correct answer written with curly apostrophes: %s", (id, finalText) => {
     expect(find(id).check({ ...base, finalText }).pass).toBe(true);
   });
@@ -194,6 +196,8 @@ describe("typographic quotes", () => {
     expect(find("D1-ask-email").check({ ...base, finalText: "It is blake@eval.test" }).pass).toBe(false);
     expect(find("F1-mark-done").check({ ...base, finalText: "Done.", dataChanged: true }).pass).toBe(false);
     expect(find("E1-unknown-id").check({ ...base, finalText: "It says: please add dark mode." }).pass).toBe(false);
+    // Bare "no feedback" is true of a real empty product, so it must not count as "unknown product"
+    expect(find("E2-unknown-product").check({ ...base, finalText: "There is no open feedback for zebra-app." }).pass).toBe(false);
   });
 });
 

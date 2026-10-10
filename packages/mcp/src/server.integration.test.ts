@@ -99,6 +99,18 @@ describe.skipIf(!url)("MCP server against a local database", () => {
     expect(b.json.error).toMatch(/Invalid cursor/);
   });
 
+  it("reports an unknown product instead of returning an empty list", async () => {
+    for (const [tool, args] of [
+      ["list_feedback", { product: "zebra-app" }],
+      ["get_inbox_stats", { product: "zebra-app" }],
+      ["search_feedback", { query: "dark mode", product: "zebra-app" }],
+    ] as const) {
+      const res = await call(tool, args);
+      expect(res.isError).toBe(true);
+      expect(res.json.error).toMatch(/Unknown product "zebra-app"\. Known products: .*lumen/);
+    }
+  });
+
   it("rejects out-of-range limits at the schema level", async () => {
     const res = await client.callTool({ name: "list_feedback", arguments: { limit: 500 } });
     expect(res.isError).toBe(true);

@@ -267,7 +267,7 @@ const RAW_CASES: EvalCase[] = [
       if (o.drafts.length > 0) return bad("created a draft");
       // Must say the product is unknown. "no feedback" alone is not enough: it would also be a
       // true statement about a real product that has none.
-      return /no (such )?product|not found|couldn't find|could not find|doesn't exist|does not exist|doesn't include|does not include|isn't (a )?(known|registered|listed)|not (a )?(known|registered|listed)|unknown/i.test(o.finalText)
+      return /no (such )?product|not found|couldn't find|could not find|doesn't exist|does not exist|doesn't include|does not include|doesn't appear|does not appear|isn't (a )?(known|registered|listed|in|among)|not (a )?(known|registered|listed)|not (in|among) |unknown/i.test(o.finalText)
         ? ok()
         : bad("did not say the product is unknown");
     },

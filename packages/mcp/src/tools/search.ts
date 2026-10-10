@@ -2,6 +2,7 @@ import type { Db } from "../db";
 import { ToolError } from "../errors";
 import { detectInjection } from "../safety/injection";
 import { stripControlChars, truncate } from "../safety/untrusted";
+import { assertProductExists } from "./queries";
 
 export const MAX_SEARCH_LIMIT = 20;
 const SNIPPET_RADIUS = 80;
@@ -46,6 +47,7 @@ export interface SearchParams {
 export async function searchFeedback(db: Db, p: SearchParams) {
   const query = p.query.trim();
   if (query.length < 2) throw new ToolError("Search query must be at least 2 characters.");
+  await assertProductExists(db, p.product);
   const terms = splitTerms(query);
   // One AND-ed condition per word; each word is matched literally (wildcards escaped)
   let matchAll = db`true`;
